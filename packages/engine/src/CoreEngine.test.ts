@@ -1,3 +1,7 @@
+/**
+ * @vitest-environment jsdom
+ */
+
 import { describe, it, expect, vi } from 'vitest';
 import { CoreEngine } from './CoreEngine';
 import * as THREE from 'three';

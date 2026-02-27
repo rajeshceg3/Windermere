@@ -52,7 +52,7 @@ Mitigation: CI must fail on lint/type errors
 
 [x] WebAudio API wrapper layer (Foundation created)
 
-[ ] KTX2 texture compression support
+[x] KTX2 texture compression support
 
 
 Dependency: Repo initialized
@@ -63,13 +63,13 @@ Risk: Version drift → lock versions in package.json
 
 1.3 Environment Configuration
 
-[ ] .env separation for dev/staging/prod
+[x] .env separation for dev/staging/prod
 
-[ ] Feature flags framework
+[x] Feature flags framework
 
-[ ] FPS debugging overlay (dev-only)
+[x] FPS debugging overlay (dev-only)
 
-[ ] WebGL capability detection utility
+[x] WebGL capability detection utility
 
 
 
