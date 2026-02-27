@@ -67,9 +67,9 @@ Risk: Version drift → lock versions in package.json
 
 [ ] Feature flags framework
 
-[ ] FPS debugging overlay (dev-only)
+[x] FPS debugging overlay (dev-only)
 
-[ ] WebGL capability detection utility
+[x] WebGL capability detection utility
 
 
 
@@ -115,11 +115,11 @@ MiddayExpanse
 
 TwilightStillness
 
-[ ] Define SceneConfig interface
+[x] Define SceneConfig interface
 
-[ ] Create scene registry
+[x] Create scene registry
 
-[ ] Define time-of-day state machine
+[x] Define time-of-day state machine
 
 
 Critical Path: Scene architecture must stabilize before asset integration
@@ -212,13 +212,13 @@ Backend (Minimal API)
 
 Frontend Engine Core
 
-[ ] Initialize WebGL renderer
+[x] Initialize WebGL renderer
 
-[ ] Set devicePixelRatio cap
+[x] Set devicePixelRatio cap
 
-[ ] Configure tone mapping
+[x] Configure tone mapping
 
-[ ] Configure color space
+[x] Configure color space
 
 
 Infrastructure
@@ -363,7 +363,7 @@ Critical Path: Must avoid frame drops during transitions
 
 Unit Tests
 
-[ ] Scene registry tests
+[x] Scene registry tests
 
 [ ] Shader uniform logic tests
 

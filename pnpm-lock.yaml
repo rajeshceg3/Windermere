@@ -92,6 +92,12 @@ importers:
       '@types/three':
         specifier: 0.172.0
         version: 0.172.0
+      jsdom:
+        specifier: ^28.1.0
+        version: 28.1.0
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.3.2)(jsdom@28.1.0)(yaml@2.8.2)
 
   packages/shaders:
     devDependencies:
