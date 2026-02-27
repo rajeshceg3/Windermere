@@ -1,5 +1,12 @@
 {
   "name": "@windermere/engine",
   "version": "0.0.0",
-  "main": "src/index.ts"
+  "main": "src/index.ts",
+  "dependencies": {
+    "gsap": "^3.14.2",
+    "three": "0.172.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.172.0"
+  }
 }
