@@ -1,5 +1,9 @@
 {
   "name": "@windermere/shaders",
   "version": "0.0.0",
-  "main": "src/index.ts"
+  "main": "src/index.ts",
+  "devDependencies": {
+    "@types/three": "0.172.0",
+    "three": "0.172.0"
+  }
 }

@@ -40,17 +40,17 @@ Mitigation: CI must fail on lint/type errors
 
 1.2 Core Technology Stack Lock-In
 
-[ ] Three.js pinned version
+[x] Three.js pinned version (0.172.0)
 
-[ ] React 18 (Concurrent Mode compatible)
+[x] React 18+ (Concurrent Mode compatible)
 
-[ ] GSAP for timeline transitions
+[x] GSAP for timeline transitions
 
-[ ] TailwindCSS for UI overlays
+[x] TailwindCSS for UI overlays
 
-[ ] Vite for build system
+[x] Vite for build system
 
-[ ] WebAudio API wrapper layer
+[x] WebAudio API wrapper layer (Foundation created)
 
 [ ] KTX2 texture compression support
 
