@@ -13,6 +13,9 @@ vi.mock('three', async () => {
     ...actual,
     WebGLRenderer: class {
       setSize = vi.fn();
+      setPixelRatio = vi.fn();
+      toneMapping = 0;
+      outputColorSpace = '';
       render = vi.fn();
       constructor() {}
     },
