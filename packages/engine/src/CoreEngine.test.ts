@@ -4,7 +4,6 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { CoreEngine } from './CoreEngine';
-import * as THREE from 'three';
 
 // Mock THREE.WebGLRenderer
 vi.mock('three', async () => {
@@ -23,12 +22,15 @@ vi.mock('three', async () => {
 });
 
 describe('CoreEngine', () => {
-  it('should initialize successfully', () => {
+  it('should initialize successfully with CameraController integration', () => {
     const canvas = document.createElement('canvas');
+    // Ensure window width/height are defined so CameraController logic succeeds
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 800 });
+    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 600 });
+
     const engine = new CoreEngine(canvas);
     expect(engine).toBeDefined();
-    // Since we mocked the class, we can check if it was instantiated.
-    // However, checking calls on a class constructor mock is tricky in some setups without spyOn.
-    // But since `new CoreEngine` didn't throw, and it calls `new THREE.WebGLRenderer`, we are good for a basic check.
+
+    // Verify properties implicitly via instantiation success without throws
   });
 });
