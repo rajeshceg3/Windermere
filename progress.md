@@ -147,15 +147,15 @@ Failure Impact: Experience feels like game instead of sanctuary
 
 2.4 Water Rendering Architecture
 
-[ ] Implement custom shader material
+[x] Implement custom shader material
 
-[ ] Add subtle normal map distortion
+[x] Add subtle normal map distortion
 
-[ ] Add reflection render target
+[x] Add reflection render target
 
-[ ] Add time-based ripple uniform
+[x] Add time-based ripple uniform
 
-[ ] Optimize fragment cost
+[x] Optimize fragment cost
 
 
 Risk: GPU overload on mobile
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 26% (34/132 items checked)
+Completion: 30% (39/132 items checked)
