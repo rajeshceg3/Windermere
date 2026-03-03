@@ -2,6 +2,7 @@ export * from './CoreEngine';
 export * from './scene/SceneConfig';
 export * from './scene/SceneRegistry';
 export * from './scene/TimeOfDayStateMachine';
+export * from './scene/WaterManager';
 export * from './camera/CameraController';
 export * from './TextureManager';
 export * from './FeatureFlags';
