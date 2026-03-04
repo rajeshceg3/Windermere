@@ -1,0 +1,4 @@
+{
+  "buildCommand": "pnpm --filter @windermere/web build",
+  "outputDirectory": "apps/web/dist"
+}
