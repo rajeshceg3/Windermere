@@ -15,6 +15,10 @@ vi.mock('three', async () => {
       setPixelRatio = vi.fn();
       toneMapping = 0;
       outputColorSpace = '';
+      setClearColor = vi.fn();
+      getRenderTarget = vi.fn();
+      setRenderTarget = vi.fn();
+      clear = vi.fn();
       render = vi.fn();
       constructor() {}
     },
