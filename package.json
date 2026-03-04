@@ -18,6 +18,7 @@
     "vitest": "^4.0.18"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "build": "pnpm --filter @windermere/web build"
   }
 }
