@@ -235,15 +235,15 @@ Infrastructure
 
 Phase 2 — Dawn Surface Implementation
 
-[ ] Implement mist particle shader
+[x] Implement mist particle shader
 
 [ ] Add rowboat mesh (LOD versioned)
 
 [ ] Add bird spline animation
 
-[ ] Implement water reflection logic
+[x] Implement water reflection logic
 
-[ ] Integrate dawn lighting profile
+[x] Integrate dawn lighting profile
 
 
 Dependency: Engine foundation complete
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 30% (39/132 items checked)
+Completion: 31% (42/132 items checked)
