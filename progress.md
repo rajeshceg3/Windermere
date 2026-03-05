@@ -166,13 +166,13 @@ Mitigation: LOD reflection fallback mode
 
 2.5 Atmospheric System
 
-[ ] Volumetric fog shader
+[x] Volumetric fog shader
 
-[ ] Depth-based gradient blending
+[x] Depth-based gradient blending
 
-[ ] Sky dome shader with gradual color interpolation
+[x] Sky dome shader with gradual color interpolation
 
-[ ] Starfield shader (Twilight only)
+[x] Starfield shader (Twilight only)
 
 
 
@@ -180,13 +180,13 @@ Mitigation: LOD reflection fallback mode
 
 2.6 Audio System Architecture
 
-[ ] WebAudio spatial node graph
+[x] WebAudio spatial node graph
 
-[ ] Distance-based attenuation curves
+[x] Distance-based attenuation curves
 
-[ ] Scene-based audio profile mapping
+[x] Scene-based audio profile mapping
 
-[ ] Idle-based audio modulation logic
+[x] Idle-based audio modulation logic
 
 
 
@@ -201,13 +201,13 @@ Phase 1 — Engine Foundation (CRITICAL PATH)
 
 Backend (Minimal API)
 
-[ ] Implement health endpoint
+[x] Implement health endpoint
 
-[ ] Implement feature flag endpoint
+[x] Implement feature flag endpoint
 
-[ ] Serve compressed assets
+[x] Serve compressed assets
 
-[ ] Enable CDN headers
+[x] Enable CDN headers
 
 
 Frontend Engine Core
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 31% (42/132 items checked)
+Completion: 41% (54/131 items checked)

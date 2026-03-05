@@ -20,5 +20,8 @@
   "scripts": {
     "prepare": "husky",
     "build": "pnpm --filter @windermere/web build"
+  },
+  "dependencies": {
+    "three": "0.172.0"
   }
 }
