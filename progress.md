@@ -237,9 +237,9 @@ Phase 2 — Dawn Surface Implementation
 
 [x] Implement mist particle shader
 
-[ ] Add rowboat mesh (LOD versioned)
+[x] Add rowboat mesh (LOD versioned)
 
-[ ] Add bird spline animation
+[x] Add bird spline animation
 
 [x] Implement water reflection logic
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 41% (54/131 items checked)
+Completion: 43% (56/131 items checked)
