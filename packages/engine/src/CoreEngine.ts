@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { CameraController } from './camera/CameraController';
 import { WaterManager } from './scene/WaterManager';
 import { MistMaterial } from '@windermere/shaders';
+import { Rowboat } from './scene/Rowboat';
+import { BirdFlock } from './scene/BirdFlock';
 
 export class CoreEngine {
   private scene: THREE.Scene;
@@ -9,6 +11,8 @@ export class CoreEngine {
   private renderer: THREE.WebGLRenderer;
   private waterManager: WaterManager;
   private mistMaterial!: MistMaterial;
+  private rowboat: Rowboat;
+  private birdFlock: BirdFlock;
   private clock: THREE.Clock;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -33,6 +37,13 @@ export class CoreEngine {
 
     this.setupDawnLighting();
     this.setupMistParticles();
+
+    this.rowboat = new Rowboat();
+    this.rowboat.position.set(0, 0.1, -10);
+    this.scene.add(this.rowboat);
+
+    this.birdFlock = new BirdFlock();
+    this.scene.add(this.birdFlock);
 
     this.animate();
   }
@@ -95,6 +106,22 @@ export class CoreEngine {
     // Update mist particles
     if (this.mistMaterial) {
       this.mistMaterial.updateTime(delta);
+    }
+
+    // Update Rowboat LOD
+    if (this.rowboat) {
+      this.rowboat.update(this.cameraController.camera);
+      // Gentle bobbing effect
+      const time = this.clock.getElapsedTime();
+      this.rowboat.position.y = 0.1 + Math.sin(time * 2) * 0.05;
+      this.rowboat.rotation.z = Math.sin(time * 1.5) * 0.02;
+      this.rowboat.rotation.x = Math.cos(time * 1.2) * 0.02;
+    }
+
+    // Update Bird Flock
+    if (this.birdFlock) {
+      const time = this.clock.getElapsedTime();
+      this.birdFlock.update(time);
     }
 
     this.renderer.render(this.scene, this.cameraController.camera);
