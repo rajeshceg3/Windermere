@@ -253,7 +253,7 @@ Dependency: Engine foundation complete
 
 Phase 3 — Midday Expanse
 
-[ ] Add sailboat instancing
+[x] Add sailboat instancing
 
 [ ] Add volumetric cloud shader
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 43% (56/131 items checked)
+Completion: 43% (57/132 items checked)

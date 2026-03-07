@@ -4,6 +4,7 @@ import { WaterManager } from './scene/WaterManager';
 import { MistMaterial } from '@windermere/shaders';
 import { Rowboat } from './scene/Rowboat';
 import { BirdFlock } from './scene/BirdFlock';
+import { SailboatInstancing } from './scene/SailboatInstancing';
 
 export class CoreEngine {
   private scene: THREE.Scene;
@@ -13,6 +14,7 @@ export class CoreEngine {
   private mistMaterial!: MistMaterial;
   private rowboat: Rowboat;
   private birdFlock: BirdFlock;
+  private sailboats: SailboatInstancing;
   private clock: THREE.Clock;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -44,6 +46,9 @@ export class CoreEngine {
 
     this.birdFlock = new BirdFlock();
     this.scene.add(this.birdFlock);
+
+    this.sailboats = new SailboatInstancing(12);
+    this.scene.add(this.sailboats);
 
     this.animate();
   }
@@ -122,6 +127,12 @@ export class CoreEngine {
     if (this.birdFlock) {
       const time = this.clock.getElapsedTime();
       this.birdFlock.update(time);
+    }
+
+    // Update Sailboats
+    if (this.sailboats) {
+      const time = this.clock.getElapsedTime();
+      this.sailboats.update(time);
     }
 
     this.renderer.render(this.scene, this.cameraController.camera);
