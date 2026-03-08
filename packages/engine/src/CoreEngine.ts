@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { CameraController } from './camera/CameraController';
 import { WaterManager } from './scene/WaterManager';
-import { MistMaterial } from '@windermere/shaders';
+import { MistMaterial, VolumetricCloudMaterial, SkyDomeMaterial } from '@windermere/shaders';
 import { Rowboat } from './scene/Rowboat';
 import { BirdFlock } from './scene/BirdFlock';
 import { SailboatInstancing } from './scene/SailboatInstancing';
+import { FishShadows } from './scene/FishShadows';
+import { AudioEngine } from '@windermere/audio';
 
 export class CoreEngine {
   private scene: THREE.Scene;
@@ -16,6 +18,10 @@ export class CoreEngine {
   private birdFlock: BirdFlock;
   private sailboats: SailboatInstancing;
   private clock: THREE.Clock;
+  private cloudMaterial!: VolumetricCloudMaterial;
+  private fishShadows: FishShadows;
+  private skyDome!: THREE.Mesh;
+  private audioEngine: AudioEngine;
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
@@ -50,7 +56,50 @@ export class CoreEngine {
     this.sailboats = new SailboatInstancing(12);
     this.scene.add(this.sailboats);
 
+    this.setupVolumetricClouds();
+
+    this.fishShadows = new FishShadows(30);
+    this.scene.add(this.fishShadows);
+
+    this.audioEngine = new AudioEngine();
+    this.setupAudio();
+
     this.animate();
+  }
+
+  private async setupAudio() {
+    await this.audioEngine.initialize();
+
+    // Simulate setting up some audio sources for the profile
+    const context = this.audioEngine.getContext();
+    if (context) {
+      const ambientWind = context.createGain();
+      const waterRipples = context.createGain();
+
+      ambientWind.connect(this.audioEngine.getMasterGain()!);
+      waterRipples.connect(this.audioEngine.getMasterGain()!);
+
+      this.audioEngine.mapSceneAudioProfile('MiddayExpanse', {
+        'ambient_wind': ambientWind,
+        'water_ripples': waterRipples
+      });
+    }
+  }
+
+  private setupVolumetricClouds() {
+    this.cloudMaterial = new VolumetricCloudMaterial({
+      color: new THREE.Color(0xffffff),
+      density: 0.15
+    });
+
+    // Create cloud planes
+    const cloudGeometry = new THREE.PlaneGeometry(300, 300, 64, 64);
+    const cloudMesh = new THREE.Mesh(cloudGeometry, this.cloudMaterial);
+
+    cloudMesh.rotation.x = -Math.PI / 2;
+    cloudMesh.position.y = 40; // High above the scene
+
+    this.scene.add(cloudMesh);
   }
 
   private setupMistParticles() {
@@ -95,6 +144,22 @@ export class CoreEngine {
 
     // Subtle fog to blend horizon
     this.scene.fog = new THREE.Fog(0x9a8c98, 20, 150);
+
+    // Add SkyDome for horizon gradient blending
+    this.setupSkyDome();
+  }
+
+  private setupSkyDome() {
+    const skyGeo = new THREE.SphereGeometry(400, 32, 15);
+    const skyMat = new SkyDomeMaterial({
+      topColor: new THREE.Color(0x87ceeb), // Sky blue
+      bottomColor: new THREE.Color(0xc9ada7), // Match horizon
+      offset: 10,
+      exponent: 0.6
+    });
+
+    this.skyDome = new THREE.Mesh(skyGeo, skyMat);
+    this.scene.add(this.skyDome);
   }
 
   private animate = () => {
@@ -111,6 +176,12 @@ export class CoreEngine {
     // Update mist particles
     if (this.mistMaterial) {
       this.mistMaterial.updateTime(delta);
+    }
+
+    // Update Volumetric Clouds
+    if (this.cloudMaterial) {
+      this.cloudMaterial.updateTime(delta);
+      this.cloudMaterial.uniforms.cameraPosition.value.copy(this.cameraController.camera.position);
     }
 
     // Update Rowboat LOD
@@ -133,6 +204,12 @@ export class CoreEngine {
     if (this.sailboats) {
       const time = this.clock.getElapsedTime();
       this.sailboats.update(time);
+    }
+
+    // Update Fish Shadows
+    if (this.fishShadows) {
+      const time = this.clock.getElapsedTime();
+      this.fishShadows.update(time);
     }
 
     this.renderer.render(this.scene, this.cameraController.camera);
