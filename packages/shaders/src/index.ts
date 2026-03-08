@@ -4,3 +4,4 @@ export * from './MistMaterial';
 export * from './VolumetricFogMaterial';
 export * from './SkyDomeMaterial';
 export * from './StarfieldMaterial';
+export * from './VolumetricCloudMaterial';

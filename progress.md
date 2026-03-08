@@ -255,13 +255,13 @@ Phase 3 — Midday Expanse
 
 [x] Add sailboat instancing
 
-[ ] Add volumetric cloud shader
+[x] Add volumetric cloud shader
 
-[ ] Implement fish shadow beneath surface
+[x] Implement fish shadow beneath surface
 
-[ ] Add horizon gradient blending
+[x] Add horizon gradient blending
 
-[ ] Integrate midday audio layer
+[x] Integrate midday audio layer
 
 
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 43% (57/132 items checked)
+Completion: 46% (61/132 items checked)
