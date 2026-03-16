@@ -19,6 +19,7 @@ export class CameraController {
   private readonly DAMPING = 0.92;
   private readonly SENSITIVITY = 0.002;
   private readonly MAX_VELOCITY = 0.05;
+  private speedMultiplier = 1.0;
 
   // Default starting position
   private basePosition = new THREE.Vector3(0, 2, 5);
@@ -72,8 +73,8 @@ export class CameraController {
     this.pointerY = event.clientY;
 
     // Apply gentle forces, clamped to avoid hard acceleration curves
-    this.velocityX -= deltaX * this.SENSITIVITY;
-    this.velocityY -= deltaY * this.SENSITIVITY;
+    this.velocityX -= deltaX * (this.SENSITIVITY * this.speedMultiplier);
+    this.velocityY -= deltaY * (this.SENSITIVITY * this.speedMultiplier);
 
     this.velocityX = THREE.MathUtils.clamp(this.velocityX, -this.MAX_VELOCITY, this.MAX_VELOCITY);
     this.velocityY = THREE.MathUtils.clamp(this.velocityY, -this.MAX_VELOCITY, this.MAX_VELOCITY);
@@ -82,6 +83,10 @@ export class CameraController {
   private onPointerUp = () => {
     this.isInteracting = false;
   };
+
+  public setSpeedMultiplier(multiplier: number) {
+    this.speedMultiplier = multiplier;
+  }
 
   private onWindowResize = () => {
     this.camera.aspect = window.innerWidth / window.innerHeight;

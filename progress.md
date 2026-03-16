@@ -269,15 +269,15 @@ Phase 3 — Midday Expanse
 
 Phase 4 — Twilight Stillness
 
-[ ] Implement starfield procedural shader
+[x] Implement starfield procedural shader
 
-[ ] Add firefly particle system
+[x] Add firefly particle system
 
-[ ] Increase fog density curve
+[x] Increase fog density curve
 
-[ ] Add twilight piano ambient tone
+[x] Add twilight piano ambient tone
 
-[ ] Reduce camera movement speed by 15%
+[x] Reduce camera movement speed by 15%
 
 
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 46% (61/132 items checked)
+Completion: 50% (66/132 items checked)
