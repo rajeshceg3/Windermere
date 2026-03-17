@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CameraController } from './camera/CameraController';
 import { WaterManager } from './scene/WaterManager';
+import { gsap } from 'gsap';
 import { MistMaterial, VolumetricCloudMaterial, SkyDomeMaterial, StarfieldMaterial } from '@windermere/shaders';
 import { Rowboat } from './scene/Rowboat';
 import { BirdFlock } from './scene/BirdFlock';
@@ -8,6 +9,8 @@ import { SailboatInstancing } from './scene/SailboatInstancing';
 import { FishShadows } from './scene/FishShadows';
 import { FireflyParticleSystem } from './scene/FireflyParticleSystem';
 import { AudioEngine } from '@windermere/audio';
+
+export type SceneState = 'DawnSurface' | 'MiddayExpanse' | 'TwilightStillness';
 
 export class CoreEngine {
   private scene: THREE.Scene;
@@ -26,6 +29,9 @@ export class CoreEngine {
   private starfieldMaterial!: StarfieldMaterial;
   private starfield!: THREE.Mesh;
   private fireflies: FireflyParticleSystem;
+
+  // Audio sources map
+  private audioSources: Record<string, GainNode> = {};
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
@@ -85,28 +91,104 @@ export class CoreEngine {
     // Simulate setting up some audio sources for the profile
     const context = this.audioEngine.getContext();
     if (context) {
-      const ambientWind = context.createGain();
-      const waterRipples = context.createGain();
-      const ambientPiano = context.createGain();
-      const crickets = context.createGain();
+      this.audioSources['ambient_wind'] = context.createGain();
+      this.audioSources['water_ripples'] = context.createGain();
+      this.audioSources['ambient_piano'] = context.createGain();
+      this.audioSources['crickets'] = context.createGain();
+      this.audioSources['ambient_mist'] = context.createGain();
+      this.audioSources['birds'] = context.createGain();
 
-      ambientWind.connect(this.audioEngine.getMasterGain()!);
-      waterRipples.connect(this.audioEngine.getMasterGain()!);
-      ambientPiano.connect(this.audioEngine.getMasterGain()!);
-      crickets.connect(this.audioEngine.getMasterGain()!);
-
-      // Map profiles for Midday
-      this.audioEngine.mapSceneAudioProfile('MiddayExpanse', {
-        'ambient_wind': ambientWind,
-        'water_ripples': waterRipples
+      Object.values(this.audioSources).forEach(source => {
+        source.connect(this.audioEngine.getMasterGain()!);
       });
 
-      // Map profiles for Twilight
-      this.audioEngine.mapSceneAudioProfile('TwilightStillness', {
-        'ambient_piano': ambientPiano,
-        'crickets': crickets
-      });
+      // Initialize with Dawn audio profile
+      this.audioEngine.mapSceneAudioProfile('DawnSurface', this.audioSources);
     }
+  }
+
+  public transitionToScene(targetScene: SceneState, duration: number = 3.0) {
+    let targetFogColor: THREE.Color;
+    let targetFogDensity: number;
+    let targetClearColor: THREE.Color;
+    let targetSkyTop: THREE.Color;
+    let targetSkyBottom: THREE.Color;
+    let targetCloudDensity: number;
+    let targetStarDensity: number;
+
+    switch (targetScene) {
+      case 'DawnSurface':
+        targetFogColor = new THREE.Color(0x9a8c98);
+        targetFogDensity = 0.02;
+        targetClearColor = new THREE.Color(0x9a8c98);
+        targetSkyTop = new THREE.Color(0x87ceeb);
+        targetSkyBottom = new THREE.Color(0xc9ada7);
+        targetCloudDensity = 0.1;
+        targetStarDensity = 0.0;
+        break;
+      case 'MiddayExpanse':
+        targetFogColor = new THREE.Color(0x87ceeb);
+        targetFogDensity = 0.005;
+        targetClearColor = new THREE.Color(0x87ceeb);
+        targetSkyTop = new THREE.Color(0x0077ff);
+        targetSkyBottom = new THREE.Color(0x87ceeb);
+        targetCloudDensity = 0.15;
+        targetStarDensity = 0.0;
+        break;
+      case 'TwilightStillness':
+        targetFogColor = new THREE.Color(0x1a1a2e);
+        targetFogDensity = 0.03;
+        targetClearColor = new THREE.Color(0x1a1a2e);
+        targetSkyTop = new THREE.Color(0x0f0c29);
+        targetSkyBottom = new THREE.Color(0x302b63);
+        targetCloudDensity = 0.05;
+        targetStarDensity = 0.05;
+        break;
+    }
+
+    // GSAP visual transitions
+    const fog = this.scene.fog as THREE.FogExp2;
+    if (fog) {
+      gsap.to(fog.color, { r: targetFogColor.r, g: targetFogColor.g, b: targetFogColor.b, duration });
+      gsap.to(fog, { density: targetFogDensity, duration });
+    }
+
+    const currentClearColor = new THREE.Color();
+    this.renderer.getClearColor(currentClearColor);
+
+    // Animate clear color via a dummy object
+    const colorObj = { r: currentClearColor.r, g: currentClearColor.g, b: currentClearColor.b };
+    gsap.to(colorObj, {
+      r: targetClearColor.r,
+      g: targetClearColor.g,
+      b: targetClearColor.b,
+      duration,
+      onUpdate: () => {
+        this.renderer.setClearColor(new THREE.Color(colorObj.r, colorObj.g, colorObj.b));
+      }
+    });
+
+    if (this.skyDome && this.skyDome.material instanceof THREE.ShaderMaterial) {
+      const topColor = this.skyDome.material.uniforms.topColor.value as THREE.Color;
+      const bottomColor = this.skyDome.material.uniforms.bottomColor.value as THREE.Color;
+      gsap.to(topColor, { r: targetSkyTop.r, g: targetSkyTop.g, b: targetSkyTop.b, duration });
+      gsap.to(bottomColor, { r: targetSkyBottom.r, g: targetSkyBottom.g, b: targetSkyBottom.b, duration });
+    }
+
+    if (this.cloudMaterial) {
+      gsap.to(this.cloudMaterial.uniforms.cloudDensity, { value: targetCloudDensity, duration });
+    }
+
+    if (this.starfieldMaterial) {
+      gsap.to(this.starfieldMaterial.uniforms.starDensity, { value: targetStarDensity, duration });
+    }
+
+    // Audio Transition (Crossfade handled linearly by AudioEngine internally over 2.0s)
+    this.audioEngine.mapSceneAudioProfile(targetScene, this.audioSources);
+
+    // Camera transition
+    const targetSpeed = targetScene === 'TwilightStillness' ? 0.85 : 1.0;
+    this.cameraController.transitionSpeedMultiplier(targetSpeed, duration);
   }
 
   private setupVolumetricClouds() {
