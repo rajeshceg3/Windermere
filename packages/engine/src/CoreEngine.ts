@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { CameraController } from './camera/CameraController';
 import { WaterManager } from './scene/WaterManager';
-import { MistMaterial, VolumetricCloudMaterial, SkyDomeMaterial } from '@windermere/shaders';
+import { MistMaterial, VolumetricCloudMaterial, SkyDomeMaterial, StarfieldMaterial } from '@windermere/shaders';
 import { Rowboat } from './scene/Rowboat';
 import { BirdFlock } from './scene/BirdFlock';
 import { SailboatInstancing } from './scene/SailboatInstancing';
 import { FishShadows } from './scene/FishShadows';
+import { FireflyParticleSystem } from './scene/FireflyParticleSystem';
 import { AudioEngine } from '@windermere/audio';
 
 export class CoreEngine {
@@ -22,6 +23,9 @@ export class CoreEngine {
   private fishShadows: FishShadows;
   private skyDome!: THREE.Mesh;
   private audioEngine: AudioEngine;
+  private starfieldMaterial!: StarfieldMaterial;
+  private starfield!: THREE.Mesh;
+  private fireflies: FireflyParticleSystem;
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
@@ -61,8 +65,16 @@ export class CoreEngine {
     this.fishShadows = new FishShadows(30);
     this.scene.add(this.fishShadows);
 
+    this.setupStarfield();
+
+    this.fireflies = new FireflyParticleSystem(1000);
+    this.scene.add(this.fireflies);
+
     this.audioEngine = new AudioEngine();
     this.setupAudio();
+
+    // Reduce camera movement speed for Twilight Stillness
+    this.cameraController.setSpeedMultiplier(0.85);
 
     this.animate();
   }
@@ -75,13 +87,24 @@ export class CoreEngine {
     if (context) {
       const ambientWind = context.createGain();
       const waterRipples = context.createGain();
+      const ambientPiano = context.createGain();
+      const crickets = context.createGain();
 
       ambientWind.connect(this.audioEngine.getMasterGain()!);
       waterRipples.connect(this.audioEngine.getMasterGain()!);
+      ambientPiano.connect(this.audioEngine.getMasterGain()!);
+      crickets.connect(this.audioEngine.getMasterGain()!);
 
+      // Map profiles for Midday
       this.audioEngine.mapSceneAudioProfile('MiddayExpanse', {
         'ambient_wind': ambientWind,
         'water_ripples': waterRipples
+      });
+
+      // Map profiles for Twilight
+      this.audioEngine.mapSceneAudioProfile('TwilightStillness', {
+        'ambient_piano': ambientPiano,
+        'crickets': crickets
       });
     }
   }
@@ -142,8 +165,8 @@ export class CoreEngine {
     const hemiLight = new THREE.HemisphereLight(0xc9ada7, 0x4a4e69, 0.8);
     this.scene.add(hemiLight);
 
-    // Subtle fog to blend horizon
-    this.scene.fog = new THREE.Fog(0x9a8c98, 20, 150);
+    // Denser fog to blend horizon for Twilight Stillness
+    this.scene.fog = new THREE.FogExp2(0x9a8c98, 0.02);
 
     // Add SkyDome for horizon gradient blending
     this.setupSkyDome();
@@ -160,6 +183,17 @@ export class CoreEngine {
 
     this.skyDome = new THREE.Mesh(skyGeo, skyMat);
     this.scene.add(this.skyDome);
+  }
+
+  private setupStarfield() {
+    const starGeo = new THREE.SphereGeometry(450, 32, 32);
+    this.starfieldMaterial = new StarfieldMaterial({ starDensity: 0.05, starSize: 0.1 });
+    this.starfield = new THREE.Mesh(starGeo, this.starfieldMaterial);
+
+    // Reverse normals to render on the inside of the sphere
+    this.starfieldMaterial.side = THREE.BackSide;
+
+    this.scene.add(this.starfield);
   }
 
   private animate = () => {
@@ -210,6 +244,17 @@ export class CoreEngine {
     if (this.fishShadows) {
       const time = this.clock.getElapsedTime();
       this.fishShadows.update(time);
+    }
+
+    // Update Fireflies
+    if (this.fireflies) {
+      const time = this.clock.getElapsedTime();
+      this.fireflies.update(time);
+    }
+
+    // Update Starfield
+    if (this.starfieldMaterial) {
+      this.starfieldMaterial.updateTime(delta);
     }
 
     this.renderer.render(this.scene, this.cameraController.camera);
