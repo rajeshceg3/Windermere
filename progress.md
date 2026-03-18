@@ -285,13 +285,13 @@ Phase 4 — Twilight Stillness
 
 Phase 5 — Scene Transitions
 
-[ ] GSAP-driven shader uniform blending
+[x] GSAP-driven shader uniform blending
 
-[ ] Crossfade audio transitions
+[x] Crossfade audio transitions
 
-[ ] Dissolve fog parameters
+[x] Dissolve fog parameters
 
-[ ] Disable abrupt camera resets
+[x] Disable abrupt camera resets
 
 
 Critical Path: Must avoid frame drops during transitions
@@ -363,11 +363,11 @@ Critical Path: Must avoid frame drops during transitions
 
 Unit Tests
 
-[ ] Scene registry tests
+[x] Scene registry tests
 
-[ ] Shader uniform logic tests
+[x] Shader uniform logic tests
 
-[ ] Camera inertia math tests
+[x] Camera inertia math tests
 
 
 Integration Tests
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 50% (66/132 items checked)
+Completion: 55% (73/132 items checked)

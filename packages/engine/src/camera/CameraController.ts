@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { gsap } from 'gsap';
 
 export class CameraController {
   public camera: THREE.PerspectiveCamera;
@@ -86,6 +87,10 @@ export class CameraController {
 
   public setSpeedMultiplier(multiplier: number) {
     this.speedMultiplier = multiplier;
+  }
+
+  public transitionSpeedMultiplier(target: number, duration: number = 2) {
+    gsap.to(this, { speedMultiplier: target, duration });
   }
 
   private onWindowResize = () => {
