@@ -347,7 +347,7 @@ Critical Path: Must avoid frame drops during transitions
 
 4.4 Observability
 
-[ ] Add FPS telemetry
+[x] Add FPS telemetry
 
 [ ] Add WebGL context loss tracking
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 55% (73/132 items checked)
+Completion: 56% (74/132 items checked)

@@ -5,6 +5,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CoreEngine } from './CoreEngine';
 
+// Mock FPSOverlay
+vi.mock('./FPSOverlay', () => ({
+  FPSOverlay: class {
+    show() {}
+    hide() {}
+    update() {}
+    destroy() {}
+  }
+}));
+
 // Mock THREE.WebGLRenderer
 vi.mock('three', async () => {
   const actual = await vi.importActual('three');

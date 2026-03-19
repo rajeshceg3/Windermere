@@ -9,6 +9,7 @@ import { SailboatInstancing } from './scene/SailboatInstancing';
 import { FishShadows } from './scene/FishShadows';
 import { FireflyParticleSystem } from './scene/FireflyParticleSystem';
 import { AudioEngine } from '@windermere/audio';
+import { FPSOverlay } from './FPSOverlay';
 
 export type SceneState = 'DawnSurface' | 'MiddayExpanse' | 'TwilightStillness';
 
@@ -29,6 +30,7 @@ export class CoreEngine {
   private starfieldMaterial!: StarfieldMaterial;
   private starfield!: THREE.Mesh;
   private fireflies: FireflyParticleSystem;
+  private fpsOverlay: FPSOverlay;
 
   // Audio sources map
   private audioSources: Record<string, GainNode> = {};
@@ -52,6 +54,10 @@ export class CoreEngine {
     });
 
     this.clock = new THREE.Clock();
+
+    // FPS Overlay
+    this.fpsOverlay = new FPSOverlay();
+    this.fpsOverlay.show();
 
     this.setupDawnLighting();
     this.setupMistParticles();
@@ -340,5 +346,8 @@ export class CoreEngine {
     }
 
     this.renderer.render(this.scene, this.cameraController.camera);
+
+    // Update FPS overlay
+    this.fpsOverlay.update();
   };
 }
