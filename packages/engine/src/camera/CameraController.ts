@@ -21,6 +21,7 @@ export class CameraController {
   private readonly SENSITIVITY = 0.002;
   private readonly MAX_VELOCITY = 0.05;
   private speedMultiplier = 1.0;
+  private isReducedMotion = false;
 
   // Default starting position
   private basePosition = new THREE.Vector3(0, 2, 5);
@@ -73,9 +74,15 @@ export class CameraController {
     this.pointerX = event.clientX;
     this.pointerY = event.clientY;
 
-    // Apply gentle forces, clamped to avoid hard acceleration curves
-    this.velocityX -= deltaX * (this.SENSITIVITY * this.speedMultiplier);
-    this.velocityY -= deltaY * (this.SENSITIVITY * this.speedMultiplier);
+    if (this.isReducedMotion) {
+      // Very reduced sensitivity for reduced motion mode
+      this.velocityX -= deltaX * (this.SENSITIVITY * 0.1);
+      this.velocityY -= deltaY * (this.SENSITIVITY * 0.1);
+    } else {
+      // Apply gentle forces, clamped to avoid hard acceleration curves
+      this.velocityX -= deltaX * (this.SENSITIVITY * this.speedMultiplier);
+      this.velocityY -= deltaY * (this.SENSITIVITY * this.speedMultiplier);
+    }
 
     this.velocityX = THREE.MathUtils.clamp(this.velocityX, -this.MAX_VELOCITY, this.MAX_VELOCITY);
     this.velocityY = THREE.MathUtils.clamp(this.velocityY, -this.MAX_VELOCITY, this.MAX_VELOCITY);
@@ -91,6 +98,10 @@ export class CameraController {
 
   public transitionSpeedMultiplier(target: number, duration: number = 2) {
     gsap.to(this, { speedMultiplier: target, duration });
+  }
+
+  public setReducedMotion(reduced: boolean) {
+    this.isReducedMotion = reduced;
   }
 
   private onWindowResize = () => {
@@ -116,8 +127,9 @@ export class CameraController {
 
     // Apply damping to gradually reduce velocity when not interacting
     if (!this.isInteracting) {
-      this.velocityX *= this.DAMPING;
-      this.velocityY *= this.DAMPING;
+      const currentDamping = this.isReducedMotion ? 0.8 : this.DAMPING;
+      this.velocityX *= currentDamping;
+      this.velocityY *= currentDamping;
     }
 
     // Depth-sensitive fog modulation based on camera positioning
