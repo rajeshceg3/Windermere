@@ -35,7 +35,12 @@ export class CoreEngine {
   // Audio sources map
   private audioSources: Record<string, GainNode> = {};
 
+  private isContextLost = false;
+  private animationFrameId: number | null = null;
+  private canvas: HTMLCanvasElement;
+
   constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
     this.scene = new THREE.Scene();
     this.cameraController = new CameraController(canvas);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -88,7 +93,43 @@ export class CoreEngine {
     // Reduce camera movement speed for Twilight Stillness
     this.cameraController.setSpeedMultiplier(0.85);
 
+    this.setupContextLossHandling();
+
     this.animate();
+  }
+
+  private setupContextLossHandling() {
+    this.canvas.addEventListener('webglcontextlost', this.onContextLost, false);
+    this.canvas.addEventListener('webglcontextrestored', this.onContextRestored, false);
+  }
+
+  private onContextLost = (event: Event) => {
+    event.preventDefault();
+    console.warn('WebGL Context Lost. Pausing animation loop.');
+    this.isContextLost = true;
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+  };
+
+  private onContextRestored = () => {
+    console.info('WebGL Context Restored. Resuming animation loop.');
+    this.isContextLost = false;
+
+    // Optionally re-initialize resources here if not using three.js auto-recovery
+    // For now, three.js handles most recovery automatically
+
+    this.animate();
+  };
+
+  public dispose() {
+    this.canvas.removeEventListener('webglcontextlost', this.onContextLost);
+    this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+    // other cleanup could go here
   }
 
   private async setupAudio() {
@@ -110,6 +151,18 @@ export class CoreEngine {
 
       // Initialize with Dawn audio profile
       this.audioEngine.mapSceneAudioProfile('DawnSurface', this.audioSources);
+    }
+  }
+
+  public toggleAudioMute(mute: boolean) {
+    if (this.audioEngine) {
+      this.audioEngine.setMute(mute);
+    }
+  }
+
+  public setReducedMotion(reduced: boolean) {
+    if (this.cameraController) {
+      this.cameraController.setReducedMotion(reduced);
     }
   }
 
@@ -285,7 +338,9 @@ export class CoreEngine {
   }
 
   private animate = () => {
-    requestAnimationFrame(this.animate);
+    if (this.isContextLost) return;
+
+    this.animationFrameId = requestAnimationFrame(this.animate);
 
     const delta = this.clock.getDelta();
 

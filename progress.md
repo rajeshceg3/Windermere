@@ -333,11 +333,11 @@ Critical Path: Must avoid frame drops during transitions
 
 4.3 Accessibility Hooks
 
-[ ] Provide reduced motion mode
+[x] Provide reduced motion mode
 
 [ ] Provide low-performance mode
 
-[ ] Add audio mute toggle
+[x] Add audio mute toggle
 
 [ ] Add high contrast UI toggle
 
@@ -349,7 +349,7 @@ Critical Path: Must avoid frame drops during transitions
 
 [x] Add FPS telemetry
 
-[ ] Add WebGL context loss tracking
+[x] Add WebGL context loss tracking
 
 [ ] Add error boundary
 
@@ -468,7 +468,7 @@ Alerting Rules
 
 Operational Runbooks
 
-[ ] WebGL context loss recovery procedure
+[x] WebGL context loss recovery procedure
 
 [ ] Audio subsystem failure mitigation
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 56% (74/132 items checked)
+Completion: 59% (78/132 items checked)
