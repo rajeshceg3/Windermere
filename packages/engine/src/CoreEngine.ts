@@ -49,6 +49,22 @@ export class CoreEngine {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
+    // Log shader compilation failures
+    if (this.renderer.debug) {
+      this.renderer.debug.checkShaderErrors = true;
+      this.renderer.debug.onShaderError = (gl, program, glVertexShader, glFragmentShader) => {
+        console.error('WebGL Shader Compilation Error!');
+        const vertexLog = gl.getShaderInfoLog(glVertexShader);
+        if (vertexLog) {
+          console.error('Vertex Shader Error:\n', vertexLog);
+        }
+        const fragmentLog = gl.getShaderInfoLog(glFragmentShader);
+        if (fragmentLog) {
+          console.error('Fragment Shader Error:\n', fragmentLog);
+        }
+      };
+    }
+
     // Set clear color for Dawn
     this.renderer.setClearColor(0x9a8c98);
 

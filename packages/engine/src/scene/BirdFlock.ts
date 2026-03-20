@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 
 export class BirdFlock extends THREE.Group {
-  private birdMeshes: THREE.Mesh[] = [];
+  private instancedMesh: THREE.InstancedMesh;
   private curve: THREE.CatmullRomCurve3;
+  private flockSize: number;
   private timeOffsets: number[] = [];
+  private offsets: THREE.Vector3[] = [];
   private speed = 0.05; // Animation speed
 
   constructor() {
@@ -26,48 +28,56 @@ export class BirdFlock extends THREE.Group {
     const birdMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
 
     // Number of birds in the flock
-    const flockSize = 5;
+    this.flockSize = 5;
 
-    for (let i = 0; i < flockSize; i++) {
-      const bird = new THREE.Mesh(birdGeometry, birdMaterial);
+    this.instancedMesh = new THREE.InstancedMesh(birdGeometry, birdMaterial, this.flockSize);
+    this.instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+    for (let i = 0; i < this.flockSize; i++) {
       // Give each bird a slight random offset from the main path
       const offsetX = (Math.random() - 0.5) * 5;
       const offsetY = (Math.random() - 0.5) * 2;
       const offsetZ = (Math.random() - 0.5) * 5;
-      bird.userData = { offset: new THREE.Vector3(offsetX, offsetY, offsetZ) };
-
-      this.birdMeshes.push(bird);
-      this.add(bird);
+      this.offsets.push(new THREE.Vector3(offsetX, offsetY, offsetZ));
 
       // Stagger the birds along the path
       this.timeOffsets.push(i * 0.05 + Math.random() * 0.02);
     }
+
+    this.add(this.instancedMesh);
   }
 
   update(time: number) {
-    this.birdMeshes.forEach((bird, index) => {
-      const offset = this.timeOffsets[index];
+    const dummy = new THREE.Object3D();
+
+    for (let i = 0; i < this.flockSize; i++) {
+      const offsetTime = this.timeOffsets[i];
       // Calculate normalized time along curve (0 to 1)
-      const t = ((time * this.speed) + offset) % 1.0;
+      const t = ((time * this.speed) + offsetTime) % 1.0;
 
       // Get position and tangent from the curve
       const position = this.curve.getPointAt(t);
       const tangent = this.curve.getTangentAt(t);
 
       // Apply offset
-      const localOffset = bird.userData.offset as THREE.Vector3;
+      const localOffset = this.offsets[i];
       position.add(localOffset);
 
-      bird.position.copy(position);
+      dummy.position.copy(position);
 
       // Make the bird look forward along the curve tangent
       const lookAtTarget = position.clone().add(tangent);
-      bird.lookAt(lookAtTarget);
+      dummy.lookAt(lookAtTarget);
 
       // Wing flapping effect (simulate by rotating slightly or scaling)
       const flapSpeed = 15;
-      bird.scale.y = 1.0 + Math.sin(time * flapSpeed + index) * 0.3;
-      bird.scale.x = 1.0 + Math.sin(time * flapSpeed + index) * 0.1;
-    });
+      dummy.scale.y = 1.0 + Math.sin(time * flapSpeed + i) * 0.3;
+      dummy.scale.x = 1.0 + Math.sin(time * flapSpeed + i) * 0.1;
+
+      dummy.updateMatrix();
+      this.instancedMesh.setMatrixAt(i, dummy.matrix);
+    }
+
+    this.instancedMesh.instanceMatrix.needsUpdate = true;
   }
 }
