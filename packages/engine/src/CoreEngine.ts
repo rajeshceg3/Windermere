@@ -166,6 +166,29 @@ export class CoreEngine {
     }
   }
 
+  public setLowPerformanceMode(enabled: boolean) {
+    // Reduce pixel ratio to 1 if enabled, otherwise restore to devicePixelRatio capped at 2
+    this.renderer.setPixelRatio(enabled ? 1 : Math.min(window.devicePixelRatio, 2));
+
+    // Toggle high-cost visual effects
+    if (this.fireflies) {
+      this.fireflies.visible = !enabled;
+    }
+    if (this.fishShadows) {
+      this.fishShadows.visible = !enabled;
+    }
+
+    // Optionally disable mist particles
+    this.scene.children.forEach(child => {
+      if (child instanceof THREE.Points && child.material === this.mistMaterial) {
+        child.visible = !enabled;
+      }
+    });
+
+    // Optionally turn off water reflections by adjusting the water manager if possible
+    // Currently WaterManager might not have a public toggle, but reducing pixel ratio helps significantly
+  }
+
   public transitionToScene(targetScene: SceneState, duration: number = 3.0) {
     let targetFogColor: THREE.Color;
     let targetFogDensity: number;

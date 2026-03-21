@@ -8,6 +8,8 @@ export const App = () => {
 
   const [isMuted, setIsMuted] = useState(false);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const [isLowPerformance, setIsLowPerformance] = useState(false);
+  const [isHighContrast, setIsHighContrast] = useState(false);
 
   useEffect(() => {
     if (canvasRef.current && !engineRef.current) {
@@ -33,8 +35,14 @@ export const App = () => {
     }
   }, [isReducedMotion]);
 
+  useEffect(() => {
+    if (engineRef.current) {
+      engineRef.current.setLowPerformanceMode(isLowPerformance);
+    }
+  }, [isLowPerformance]);
+
   return (
-    <div className="relative w-screen h-screen">
+    <div className={`relative w-screen h-screen ${isHighContrast ? 'high-contrast' : ''}`}>
       <canvas ref={canvasRef} className="absolute inset-0 block w-full h-full" />
 
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-4">
@@ -51,6 +59,16 @@ export const App = () => {
           label="Reduced Motion"
           checked={isReducedMotion}
           onChange={setIsReducedMotion}
+        />
+        <Toggle
+          label="Low Performance Mode"
+          checked={isLowPerformance}
+          onChange={setIsLowPerformance}
+        />
+        <Toggle
+          label="High Contrast UI"
+          checked={isHighContrast}
+          onChange={setIsHighContrast}
         />
       </div>
     </div>

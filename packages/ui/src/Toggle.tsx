@@ -16,10 +16,10 @@ export const Toggle: React.FC<ToggleProps> = ({ label, checked, onChange }) => {
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
         />
-        <div className={`block w-10 h-6 rounded-full transition-colors ${checked ? 'bg-blue-500' : 'bg-gray-400'}`}></div>
+        <div className={`block w-10 h-6 rounded-full transition-colors hc-toggle-track ${checked ? 'bg-blue-500 hc-toggle-track-checked' : 'bg-gray-400 hc-toggle-track-unchecked'}`}></div>
         <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${checked ? 'transform translate-x-4' : ''}`}></div>
       </div>
-      <div className="text-white font-medium text-sm drop-shadow-md">
+      <div className="text-white font-medium text-sm drop-shadow-md hc-text">
         {label}
       </div>
     </label>
