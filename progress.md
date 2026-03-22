@@ -303,9 +303,9 @@ Critical Path: Must avoid frame drops during transitions
 
 4.1 Performance Optimization
 
-[ ] Implement LOD manager
+[x] Implement LOD manager
 
-[ ] Implement frustum culling
+[x] Implement frustum culling
 
 [x] Add instancing for repeated meshes
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 64% (84/132 items checked)
+Completion: 65% (86/132 items checked)

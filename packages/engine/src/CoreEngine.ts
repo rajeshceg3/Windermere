@@ -10,6 +10,8 @@ import { FishShadows } from './scene/FishShadows';
 import { FireflyParticleSystem } from './scene/FireflyParticleSystem';
 import { AudioEngine } from '@windermere/audio';
 import { FPSOverlay } from './FPSOverlay';
+import { LODManager } from './managers/LODManager';
+import { FrustumCullingManager } from './managers/FrustumCullingManager';
 
 export type SceneState = 'DawnSurface' | 'MiddayExpanse' | 'TwilightStillness';
 
@@ -31,6 +33,8 @@ export class CoreEngine {
   private starfield!: THREE.Mesh;
   private fireflies: FireflyParticleSystem;
   private fpsOverlay: FPSOverlay;
+  private lodManager: LODManager;
+  private frustumCullingManager: FrustumCullingManager;
 
   // Audio sources map
   private audioSources: Record<string, GainNode> = {};
@@ -76,6 +80,9 @@ export class CoreEngine {
 
     this.clock = new THREE.Clock();
 
+    this.lodManager = new LODManager();
+    this.frustumCullingManager = new FrustumCullingManager();
+
     // FPS Overlay
     this.fpsOverlay = new FPSOverlay();
     this.fpsOverlay.show();
@@ -86,6 +93,7 @@ export class CoreEngine {
     this.rowboat = new Rowboat();
     this.rowboat.position.set(0, 0.1, -10);
     this.scene.add(this.rowboat);
+    this.lodManager.addLOD(this.rowboat.lod);
 
     this.birdFlock = new BirdFlock();
     this.scene.add(this.birdFlock);
@@ -105,6 +113,9 @@ export class CoreEngine {
 
     this.audioEngine = new AudioEngine();
     this.setupAudio();
+
+    // Register objects for Frustum Culling
+    this.frustumCullingManager.registerObject(this.scene);
 
     // Reduce camera movement speed for Twilight Stillness
     this.cameraController.setSpeedMultiplier(0.85);
@@ -377,9 +388,11 @@ export class CoreEngine {
       this.cloudMaterial.uniforms.cameraPosition.value.copy(this.cameraController.camera.position);
     }
 
-    // Update Rowboat LOD
+    // Update LODs
+    this.lodManager.update(this.cameraController.camera);
+
+    // Update Rowboat bobbing
     if (this.rowboat) {
-      this.rowboat.update(this.cameraController.camera);
       // Gentle bobbing effect
       const time = this.clock.getElapsedTime();
       this.rowboat.position.y = 0.1 + Math.sin(time * 2) * 0.05;
