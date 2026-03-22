@@ -5,6 +5,20 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CoreEngine } from './CoreEngine';
 
+// Mock AudioContext because jsdom doesn't have it
+class MockAudioContext {
+  createGain() { return { connect: vi.fn(), gain: { value: 1, linearRampToValueAtTime: vi.fn() } }; }
+  createPanner() { return { connect: vi.fn() }; }
+  createBufferSource() { return { connect: vi.fn() }; }
+  destination = {};
+  currentTime = 0;
+  state = 'running';
+  resume = vi.fn();
+}
+
+vi.stubGlobal('AudioContext', MockAudioContext);
+vi.stubGlobal('webkitAudioContext', MockAudioContext);
+
 // Mock FPSOverlay
 vi.mock('./FPSOverlay', () => ({
   FPSOverlay: class {
