@@ -307,7 +307,7 @@ Critical Path: Must avoid frame drops during transitions
 
 [ ] Implement frustum culling
 
-[ ] Add instancing for repeated meshes
+[x] Add instancing for repeated meshes
 
 [ ] Profile GPU frame time
 
@@ -351,9 +351,9 @@ Critical Path: Must avoid frame drops during transitions
 
 [x] Add WebGL context loss tracking
 
-[ ] Add error boundary
+[x] Add error boundary
 
-[ ] Log shader compilation failures
+[x] Log shader compilation failures
 
 
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 59% (78/132 items checked)
+Completion: 61% (81/132 items checked)
