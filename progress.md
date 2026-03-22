@@ -372,7 +372,7 @@ Unit Tests
 
 Integration Tests
 
-[ ] Scene transition tests
+[x] Scene transition tests
 
 [ ] Audio state switching tests
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 61% (81/132 items checked)
+Completion: 62% (82/132 items checked)
