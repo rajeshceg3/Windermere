@@ -374,9 +374,9 @@ Integration Tests
 
 [x] Scene transition tests
 
-[ ] Audio state switching tests
+[x] Audio state switching tests
 
-[ ] Fog blending correctness tests
+[x] Fog blending correctness tests
 
 
 E2E Tests
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 62% (82/132 items checked)
+Completion: 64% (84/132 items checked)

@@ -90,6 +90,11 @@ describe('CoreEngine Scene Transitions', () => {
       call[1].r !== undefined && call[1].g !== undefined && call[1].b !== undefined && call[1].duration === 3.0
     );
     expect(fogColorCall).toBeDefined();
+    // MiddayExpanse target fog color should be close to 0x87ceeb
+    const expectedColor = new THREE.Color(0x87ceeb);
+    expect(fogColorCall![1].r).toBeCloseTo(expectedColor.r);
+    expect(fogColorCall![1].g).toBeCloseTo(expectedColor.g);
+    expect(fogColorCall![1].b).toBeCloseTo(expectedColor.b);
 
     // Check fog density transition
     const fogDensityCall = vi.mocked(gsap.to).mock.calls.find(call =>
@@ -111,11 +116,53 @@ describe('CoreEngine Scene Transitions', () => {
 
     expect(gsap.to).toHaveBeenCalled();
 
+    // Check fog color transition
+    const fogColorCall = vi.mocked(gsap.to).mock.calls.find(call =>
+      call[1].r !== undefined && call[1].g !== undefined && call[1].b !== undefined && call[1].duration === 4.0
+    );
+    expect(fogColorCall).toBeDefined();
+    // TwilightStillness target fog color should be close to 0x1a1a2e
+    const expectedColor = new THREE.Color(0x1a1a2e);
+    expect(fogColorCall![1].r).toBeCloseTo(expectedColor.r);
+    expect(fogColorCall![1].g).toBeCloseTo(expectedColor.g);
+    expect(fogColorCall![1].b).toBeCloseTo(expectedColor.b);
+
     // Check fog density transition
     const fogDensityCall = vi.mocked(gsap.to).mock.calls.find(call =>
       call[1].density !== undefined && call[1].duration === 4.0
     );
     expect(fogDensityCall).toBeDefined();
     expect(fogDensityCall![1].density).toBe(0.03); // Target density for TwilightStillness
+  });
+
+  it('transitions to DawnSurface correctly', () => {
+    const canvas = document.createElement('canvas');
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 800 });
+    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 600 });
+
+    const engine = new CoreEngine(canvas);
+    vi.mocked(gsap.to).mockClear();
+
+    engine.transitionToScene('DawnSurface', 2.0);
+
+    expect(gsap.to).toHaveBeenCalled();
+
+    // Check fog color transition
+    const fogColorCall = vi.mocked(gsap.to).mock.calls.find(call =>
+      call[1].r !== undefined && call[1].g !== undefined && call[1].b !== undefined && call[1].duration === 2.0
+    );
+    expect(fogColorCall).toBeDefined();
+    // DawnSurface target fog color should be close to 0x9a8c98
+    const expectedColor = new THREE.Color(0x9a8c98);
+    expect(fogColorCall![1].r).toBeCloseTo(expectedColor.r);
+    expect(fogColorCall![1].g).toBeCloseTo(expectedColor.g);
+    expect(fogColorCall![1].b).toBeCloseTo(expectedColor.b);
+
+    // Check fog density transition
+    const fogDensityCall = vi.mocked(gsap.to).mock.calls.find(call =>
+      call[1].density !== undefined && call[1].duration === 2.0
+    );
+    expect(fogDensityCall).toBeDefined();
+    expect(fogDensityCall![1].density).toBe(0.02); // Target density for DawnSurface
   });
 });
