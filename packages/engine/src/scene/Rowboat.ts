@@ -52,8 +52,4 @@ export class Rowboat extends THREE.Group {
 
     this.add(this.lod);
   }
-
-  update(camera: THREE.Camera) {
-    this.lod.update(camera);
-  }
 }
