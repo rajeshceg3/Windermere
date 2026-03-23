@@ -227,7 +227,7 @@ Infrastructure
 
 [ ] Setup CloudFront / CDN
 
-[ ] Enable Brotli compression
+[x] Enable Brotli compression
 
 
 
@@ -319,11 +319,11 @@ Critical Path: Must avoid frame drops during transitions
 
 4.2 Security Hardening
 
-[ ] Enable CSP headers
+[x] Enable CSP headers
 
-[ ] Disable inline scripts
+[x] Disable inline scripts
 
-[ ] Validate asset integrity via hash
+[x] Validate asset integrity via hash
 
 [ ] Disable unnecessary backend routes
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 65% (86/132 items checked)
+Completion: 68% (90/132 items checked)
