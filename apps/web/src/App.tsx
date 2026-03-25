@@ -8,6 +8,8 @@ export const App = () => {
 
   const [isMuted, setIsMuted] = useState(false);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const [isHighContrast, setIsHighContrast] = useState(false);
+  const [isLowPerformance, setIsLowPerformance] = useState(false);
 
   useEffect(() => {
     if (canvasRef.current && !engineRef.current) {
@@ -33,12 +35,18 @@ export const App = () => {
     }
   }, [isReducedMotion]);
 
+  useEffect(() => {
+    if (engineRef.current) {
+      engineRef.current.setLowPerformance(isLowPerformance);
+    }
+  }, [isLowPerformance]);
+
   return (
-    <div className="relative w-screen h-screen">
+    <div className={`relative w-screen h-screen ${isHighContrast ? 'bg-black' : ''}`}>
       <canvas ref={canvasRef} className="absolute inset-0 block w-full h-full" />
 
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-4">
-        <Button label="Start Experience" onClick={() => console.log('Start clicked')} />
+        <Button label="Start Experience" onClick={() => console.log('Start clicked')} highContrast={isHighContrast} />
       </div>
 
       <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-3">
@@ -46,11 +54,25 @@ export const App = () => {
           label="Mute Audio"
           checked={isMuted}
           onChange={setIsMuted}
+          highContrast={isHighContrast}
         />
         <Toggle
           label="Reduced Motion"
           checked={isReducedMotion}
           onChange={setIsReducedMotion}
+          highContrast={isHighContrast}
+        />
+        <Toggle
+          label="High Contrast UI"
+          checked={isHighContrast}
+          onChange={setIsHighContrast}
+          highContrast={isHighContrast}
+        />
+        <Toggle
+          label="Low Performance Mode"
+          checked={isLowPerformance}
+          onChange={setIsLowPerformance}
+          highContrast={isHighContrast}
         />
       </div>
     </div>
