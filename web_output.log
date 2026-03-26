@@ -2,8 +2,10 @@
 > @windermere/web@0.0.0 dev /app/apps/web
 > vite
 
+(node:3206) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
 
-  VITE v7.3.1  ready in 253 ms
+  VITE v7.3.1  ready in 418 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose

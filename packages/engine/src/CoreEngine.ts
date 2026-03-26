@@ -193,6 +193,12 @@ export class CoreEngine {
     }
   }
 
+  public setLowPerformance(isLow: boolean) {
+    if (this.renderer) {
+      this.renderer.setPixelRatio(isLow ? 1 : Math.min(window.devicePixelRatio, 2));
+    }
+  }
+
   public transitionToScene(targetScene: SceneState, duration: number = 3.0) {
     let targetFogColor: THREE.Color;
     let targetFogDensity: number;

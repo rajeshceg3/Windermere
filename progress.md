@@ -335,11 +335,11 @@ Critical Path: Must avoid frame drops during transitions
 
 [x] Provide reduced motion mode
 
-[ ] Provide low-performance mode
+[x] Provide low-performance mode
 
 [x] Add audio mute toggle
 
-[ ] Add high contrast UI toggle
+[x] Add high contrast UI toggle
 
 
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 68% (90/132 items checked)
+Completion: 69% (92/132 items checked)
