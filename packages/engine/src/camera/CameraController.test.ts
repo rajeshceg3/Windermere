@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { CameraController } from './CameraController';
 import * as THREE from 'three';
 
@@ -34,6 +34,7 @@ describe('CameraController', () => {
     // We access the private speedMultiplier property for test verification or just verify through a side-effect if we had a getter
     // Since it affects pointermove sensitivity, we can just ensure the method doesn't throw and state holds
     controller.setSpeedMultiplier(0.5);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((controller as any).speedMultiplier).toBe(0.5);
   });
 
@@ -42,6 +43,7 @@ describe('CameraController', () => {
     controller.transitionSpeedMultiplier(0.85, 1.0);
     // Since GSAP transitions are async, we can at least ensure it was called without errors
     // the property will eventually update
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((controller as any).speedMultiplier).toBeDefined();
   });
 });

@@ -411,11 +411,11 @@ Edge Case Validation
 
 CI/CD
 
-[ ] Build pipeline with cache
+[x] Build pipeline with cache
 
-[ ] Lint + type check gate
+[x] Lint + type check gate
 
-[ ] Unit test gate
+[x] Unit test gate
 
 [ ] Performance budget gate
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 70% (93/132 items checked)
+Completion: 73% (96/132 items checked)
