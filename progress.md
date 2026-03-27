@@ -325,7 +325,7 @@ Critical Path: Must avoid frame drops during transitions
 
 [x] Validate asset integrity via hash
 
-[ ] Disable unnecessary backend routes
+[x] Disable unnecessary backend routes
 
 
 
@@ -525,4 +525,4 @@ Release is authorized ONLY if:
 
 This is not complete until every box is checked.
 
-Completion: 69% (92/132 items checked)
+Completion: 70% (93/132 items checked)
