@@ -12,6 +12,7 @@ export class AudioEngine {
     if (this.isInitialized) return;
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
 
       this.masterGain = this.context.createGain();

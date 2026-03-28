@@ -3,7 +3,7 @@ export class WebGLDetector {
     try {
       const canvas = document.createElement('canvas');
       return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
-    } catch (e) {
+    } catch {
       return false;
     }
   }
@@ -12,12 +12,14 @@ export class WebGLDetector {
     try {
       const canvas = document.createElement('canvas');
       return !!(window.WebGL2RenderingContext && canvas.getContext('webgl2'));
-    } catch (e) {
+    } catch {
       return false;
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static getWebGLCapabilities(): Record<string, any> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const capabilities: Record<string, any> = {
       webgl: this.isWebGLAvailable(),
       webgl2: this.isWebGL2Available(),

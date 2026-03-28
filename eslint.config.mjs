@@ -7,6 +7,6 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   prettier,
   {
-    ignores: ['node_modules/', 'dist/'],
+    ignores: ['node_modules/', 'dist/', 'apps/web/public/basis/'],
   }
 );
