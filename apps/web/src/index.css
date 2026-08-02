@@ -1,3 +1,74 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  color: #f8fbff;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #071019;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; overflow: hidden; }
+button { font: inherit; }
+
+.showcase-shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  isolation: isolate;
+  background: radial-gradient(circle at 50% 100%, #244455 0%, #071019 65%);
+}
+
+.showcase-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+
+.aurora { position: absolute; width: 44rem; height: 44rem; border-radius: 999px; filter: blur(52px); opacity: .42; pointer-events: none; mix-blend-mode: screen; }
+.aurora-one { right: -12rem; top: -14rem; background: #8ee7ff; }
+.aurora-two { left: 20%; bottom: -22rem; background: #ffb184; }
+.grain { position: absolute; inset: 0; pointer-events: none; opacity: .16; background-image: linear-gradient(115deg, rgba(255,255,255,.22), transparent 18%, rgba(255,255,255,.08) 30%, transparent 48%); }
+
+.hero-panel, .scene-dock, .systems-panel, .control-panel {
+  position: absolute;
+  z-index: 5;
+  border: 1px solid rgba(255,255,255,.18);
+  background: linear-gradient(135deg, rgba(9,18,29,.74), rgba(9,18,29,.38));
+  box-shadow: 0 24px 90px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.16);
+  backdrop-filter: blur(22px) saturate(1.25);
+}
+
+.hero-panel { top: 5vh; left: clamp(1rem, 4vw, 4rem); width: min(42rem, calc(100vw - 2rem)); padding: clamp(1.4rem, 3vw, 2.5rem); border-radius: 2rem; }
+.kicker, .panel-label { margin: 0 0 .8rem; color: #9ee7ff; text-transform: uppercase; letter-spacing: .22em; font-weight: 800; font-size: .74rem; }
+h1 { max-width: 11ch; margin: 0; font-size: clamp(3rem, 8vw, 7.8rem); line-height: .82; letter-spacing: -.08em; text-wrap: balance; }
+.hero-copy { max-width: 39rem; margin: 1.2rem 0 0; color: rgba(248,251,255,.82); font-size: clamp(1rem, 1.5vw, 1.18rem); line-height: 1.65; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: .85rem; margin-top: 1.6rem; }
+.ghost-button { border: 1px solid rgba(255,255,255,.26); color: #fff; padding: .7rem 1rem; border-radius: 999px; background: rgba(255,255,255,.08); cursor: pointer; }
+
+.scene-dock { right: clamp(1rem, 3vw, 3rem); top: 5vh; width: min(24rem, calc(100vw - 2rem)); padding: .8rem; border-radius: 1.5rem; display: grid; gap: .7rem; }
+.scene-card { text-align: left; color: #fff; border: 1px solid rgba(255,255,255,.14); border-radius: 1.1rem; padding: 1rem; background: rgba(255,255,255,.07); cursor: pointer; transition: transform .2s ease, border-color .2s ease, background .2s ease; }
+.scene-card:hover, .scene-card.is-active { transform: translateY(-2px); border-color: rgba(158,231,255,.75); background: linear-gradient(135deg, rgba(158,231,255,.22), rgba(255,177,132,.12)); }
+.scene-card span, .scene-card small { display: block; color: rgba(248,251,255,.7); }
+.scene-card span { font-size: .7rem; text-transform: uppercase; letter-spacing: .16em; font-weight: 800; }
+.scene-card strong { display: block; margin: .35rem 0; font-size: 1.05rem; }
+.scene-card small { line-height: 1.45; }
+
+.systems-panel { left: clamp(1rem, 4vw, 4rem); bottom: 4vh; width: min(38rem, calc(100vw - 2rem)); padding: 1.1rem; border-radius: 1.5rem; }
+.systems-panel h2 { margin: 0 0 1rem; font-size: 1.25rem; }
+dl { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+dl div { padding: .75rem; border-radius: 1rem; background: rgba(255,255,255,.08); }
+dt { color: #ffddb8; font-weight: 800; font-size: .78rem; }
+dd { margin: .25rem 0 0; color: rgba(248,251,255,.78); font-size: .85rem; line-height: 1.35; }
+
+.control-panel { right: clamp(1rem, 3vw, 3rem); bottom: 4vh; padding: 1rem; border-radius: 1.4rem; display: grid; gap: .85rem; }
+
+.is-high-contrast .hero-panel, .is-high-contrast .scene-dock, .is-high-contrast .systems-panel, .is-high-contrast .control-panel { background: #000; border: 3px solid #fff; box-shadow: none; }
+.is-high-contrast .kicker, .is-high-contrast .panel-label, .is-high-contrast dt { color: #fff200; }
+
+@media (max-width: 900px) {
+  body { overflow: auto; }
+  .showcase-shell { min-height: 100vh; height: auto; padding: 1rem; display: grid; gap: 1rem; }
+  .showcase-canvas { position: fixed; }
+  .hero-panel, .scene-dock, .systems-panel, .control-panel { position: relative; inset: auto; width: 100%; }
+  h1 { font-size: clamp(3rem, 17vw, 5rem); }
+  dl { grid-template-columns: 1fr; }
+}
