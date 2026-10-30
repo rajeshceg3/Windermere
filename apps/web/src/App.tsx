@@ -5,25 +5,21 @@ import { Button, Toggle } from '@windermere/ui';
 const scenePresets: Array<{
   id: SceneState;
   label: string;
-  eyebrow: string;
   copy: string;
 }> = [
   {
     id: 'DawnSurface',
     label: 'Dawn Surface',
-    eyebrow: 'Cinematic onboarding',
     copy: 'Rose-gold mist, quiet birds, and a low camera glide over mirror-still water.',
   },
   {
     id: 'MiddayExpanse',
     label: 'Midday Expanse',
-    eyebrow: 'Exploration mode',
     copy: 'High clarity water, bright volumetric cloud cover, distant boats, and open navigation.',
   },
   {
     id: 'TwilightStillness',
     label: 'Twilight Stillness',
-    eyebrow: 'Reflective finale',
     copy: 'A slower pace with stars, fireflies, crickets, and deeper horizon fog.',
   },
 ];
@@ -91,7 +87,6 @@ export const App = () => {
         className="hero-panel"
         aria-label="Windermere experience overview"
       >
-        <p className="kicker">Windermere Frontier Preview · 2026</p>
         <h1>Step into a living lake that feels filmed, not rendered.</h1>
         <p className="hero-copy">
           A realtime WebGL destination layer for immersive travel storytelling:
@@ -120,7 +115,6 @@ export const App = () => {
             className={`scene-card ${activeScene === scene.id ? 'is-active' : ''}`}
             onClick={() => selectScene(scene.id)}
           >
-            <span>{scene.eyebrow}</span>
             <strong>{scene.label}</strong>
             <small>{scene.copy}</small>
           </button>
@@ -129,7 +123,6 @@ export const App = () => {
 
       <section className="systems-panel" aria-label="Rendering systems">
         <div>
-          <p className="panel-label">Live systems</p>
           <h2>Production-grade sensory stack</h2>
         </div>
         <dl>
