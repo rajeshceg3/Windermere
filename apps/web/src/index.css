@@ -64,7 +64,7 @@ button { font: inherit; background: none; border: 0; padding: 0; cursor: pointer
   opacity: 0;
   transform: translateY(4px);
   transition: opacity .9s ease, transform .9s ease;
-  pointer-events: none;
+  pointer-events: auto; /* small chrome stays tappable even while faded, so a first touch is never lost */
 }
 .chrome.is-visible {
   opacity: 1;
@@ -147,7 +147,8 @@ header.chrome {
   backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
 }
-.time-dock.is-visible { transform: translate(-50%, 0); }
+.time-dock { pointer-events: none; } /* the wide dock only intercepts once visible */
+.time-dock.is-visible { transform: translate(-50%, 0); pointer-events: auto; }
 .time-dot {
   display: grid;
   justify-items: center;
