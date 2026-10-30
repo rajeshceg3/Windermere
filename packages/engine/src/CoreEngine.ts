@@ -10,6 +10,7 @@ import { FishShadows } from './scene/FishShadows';
 import { FireflyParticleSystem } from './scene/FireflyParticleSystem';
 import { AudioEngine } from '@windermere/audio';
 import { FPSOverlay } from './FPSOverlay';
+import { featureFlags } from './FeatureFlags';
 import { LODManager } from './managers/LODManager';
 import { FrustumCullingManager } from './managers/FrustumCullingManager';
 
@@ -85,7 +86,11 @@ export class CoreEngine {
 
     // FPS Overlay
     this.fpsOverlay = new FPSOverlay();
-    this.fpsOverlay.show();
+    if (featureFlags.isEnabled('fpsOverlay')) {
+      this.fpsOverlay.show();
+    } else {
+      this.fpsOverlay.hide();
+    }
 
     this.setupDawnLighting();
     this.setupMistParticles();
@@ -438,6 +443,8 @@ export class CoreEngine {
     this.renderer.render(this.scene, this.cameraController.camera);
 
     // Update FPS overlay
-    this.fpsOverlay.update();
+    if (featureFlags.isEnabled('fpsOverlay')) {
+      this.fpsOverlay.update();
+    }
   };
 }
