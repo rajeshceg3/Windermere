@@ -38,7 +38,6 @@ button { font: inherit; }
 }
 
 .hero-panel { top: 5vh; left: clamp(1rem, 4vw, 4rem); width: min(42rem, calc(100vw - 2rem)); padding: clamp(1.4rem, 3vw, 2.5rem); border-radius: 2rem; }
-.kicker, .panel-label { margin: 0 0 .8rem; color: #9ee7ff; text-transform: uppercase; letter-spacing: .22em; font-weight: 800; font-size: .74rem; }
 h1 { max-width: 11ch; margin: 0; font-size: clamp(3rem, 8vw, 7.8rem); line-height: .82; letter-spacing: -.08em; text-wrap: balance; }
 .hero-copy { max-width: 39rem; margin: 1.2rem 0 0; color: rgba(248,251,255,.82); font-size: clamp(1rem, 1.5vw, 1.18rem); line-height: 1.65; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: .85rem; margin-top: 1.6rem; }
@@ -47,9 +46,8 @@ h1 { max-width: 11ch; margin: 0; font-size: clamp(3rem, 8vw, 7.8rem); line-heigh
 .scene-dock { right: clamp(1rem, 3vw, 3rem); top: 5vh; width: min(24rem, calc(100vw - 2rem)); padding: .8rem; border-radius: 1.5rem; display: grid; gap: .7rem; }
 .scene-card { text-align: left; color: #fff; border: 1px solid rgba(255,255,255,.14); border-radius: 1.1rem; padding: 1rem; background: rgba(255,255,255,.07); cursor: pointer; transition: transform .2s ease, border-color .2s ease, background .2s ease; }
 .scene-card:hover, .scene-card.is-active { transform: translateY(-2px); border-color: rgba(158,231,255,.75); background: linear-gradient(135deg, rgba(158,231,255,.22), rgba(255,177,132,.12)); }
-.scene-card span, .scene-card small { display: block; color: rgba(248,251,255,.7); }
-.scene-card span { font-size: .7rem; text-transform: uppercase; letter-spacing: .16em; font-weight: 800; }
-.scene-card strong { display: block; margin: .35rem 0; font-size: 1.05rem; }
+.scene-card small { display: block; color: rgba(248,251,255,.7); }
+.scene-card strong { display: block; margin: 0 0 .35rem; font-size: 1.05rem; }
 .scene-card small { line-height: 1.45; }
 
 .systems-panel { left: clamp(1rem, 4vw, 4rem); bottom: 4vh; width: min(38rem, calc(100vw - 2rem)); padding: 1.1rem; border-radius: 1.5rem; }
@@ -62,7 +60,7 @@ dd { margin: .25rem 0 0; color: rgba(248,251,255,.78); font-size: .85rem; line-h
 .control-panel { right: clamp(1rem, 3vw, 3rem); bottom: 4vh; padding: 1rem; border-radius: 1.4rem; display: grid; gap: .85rem; }
 
 .is-high-contrast .hero-panel, .is-high-contrast .scene-dock, .is-high-contrast .systems-panel, .is-high-contrast .control-panel { background: #000; border: 3px solid #fff; box-shadow: none; }
-.is-high-contrast .kicker, .is-high-contrast .panel-label, .is-high-contrast dt { color: #fff200; }
+.is-high-contrast dt { color: #fff200; }
 
 @media (max-width: 900px) {
   body { overflow: auto; }
