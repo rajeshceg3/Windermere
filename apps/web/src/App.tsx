@@ -1,55 +1,96 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CoreEngine, type SceneState } from '@windermere/engine';
-import { Button, Toggle } from '@windermere/ui';
 
-const scenePresets: Array<{
-  id: SceneState;
+const scenes: Array<{ id: SceneState; label: string }> = [
+  { id: 'DawnSurface', label: 'Dawn' },
+  { id: 'MiddayExpanse', label: 'Midday' },
+  { id: 'TwilightStillness', label: 'Twilight' },
+];
+
+const CHROME_IDLE_MS = 4200;
+
+const SoundIcon = ({ muted }: { muted: boolean }) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 5 6.5 9H3v6h3.5L11 19V5z" fill="currentColor" stroke="none" />
+    {muted ? (
+      <path d="M15 9.5l5 5m0-5l-5 5" />
+    ) : (
+      <>
+        <path d="M15 9.2a4 4 0 0 1 0 5.6" />
+        <path d="M17.4 6.8a7.4 7.4 0 0 1 0 10.4" />
+      </>
+    )}
+  </svg>
+);
+
+const CalmIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <line x1="4" y1="8" x2="20" y2="8" />
+    <circle cx="9" cy="8" r="2.2" fill="currentColor" stroke="none" />
+    <line x1="4" y1="16" x2="20" y2="16" />
+    <circle cx="15" cy="16" r="2.2" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+const QuietSwitch = ({
+  label,
+  checked,
+  onChange,
+}: {
   label: string;
-  copy: string;
-}> = [
-  {
-    id: 'DawnSurface',
-    label: 'Dawn Surface',
-    copy: 'Rose-gold mist, quiet birds, and a low camera glide over mirror-still water.',
-  },
-  {
-    id: 'MiddayExpanse',
-    label: 'Midday Expanse',
-    copy: 'High clarity water, bright volumetric cloud cover, distant boats, and open navigation.',
-  },
-  {
-    id: 'TwilightStillness',
-    label: 'Twilight Stillness',
-    copy: 'A slower pace with stars, fireflies, crickets, and deeper horizon fog.',
-  },
-];
-
-const telemetry = [
-  ['Water mesh', 'Realtime planar reflections'],
-  ['Atmosphere', 'Volumetric fog + procedural cloud field'],
-  ['Wildlife', 'Flocking birds, fish shadows, firefly particles'],
-  ['Accessibility', 'Motion, contrast, audio, and performance controls'],
-];
+  checked: boolean;
+  onChange: (next: boolean) => void;
+}) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    className={`quiet-row ${checked ? 'is-on' : ''}`}
+    onClick={() => onChange(!checked)}
+  >
+    <span>{label}</span>
+    <span className="quiet-track" aria-hidden="true">
+      <span className="quiet-thumb" />
+    </span>
+  </button>
+);
 
 export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<CoreEngine | null>(null);
+  const idleTimer = useRef<number | null>(null);
 
-  const [isMuted, setIsMuted] = useState(false);
-  const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isReducedMotion, setIsReducedMotion] = useState(
+    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
   const [isHighContrast, setIsHighContrast] = useState(false);
   const [isLowPerformance, setIsLowPerformance] = useState(false);
   const [activeScene, setActiveScene] = useState<SceneState>('DawnSurface');
+  const [veilLifted, setVeilLifted] = useState(false);
+  const [veilGone, setVeilGone] = useState(false);
+  const [chromeVisible, setChromeVisible] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     if (canvasRef.current && !engineRef.current) {
       engineRef.current = new CoreEngine(canvasRef.current);
+      engineRef.current.toggleAudioMute(true);
     }
     return () => {
       if (engineRef.current) {
         engineRef.current.dispose();
         engineRef.current = null;
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const lift = window.setTimeout(() => setVeilLifted(true), 900);
+    const remove = window.setTimeout(() => setVeilGone(true), 4400);
+    return () => {
+      window.clearTimeout(lift);
+      window.clearTimeout(remove);
     };
   }, []);
 
@@ -65,101 +106,104 @@ export const App = () => {
     engineRef.current?.setLowPerformance(isLowPerformance);
   }, [isLowPerformance]);
 
+  const wake = useCallback(() => {
+    setChromeVisible(true);
+    if (idleTimer.current) {
+      window.clearTimeout(idleTimer.current);
+    }
+    idleTimer.current = window.setTimeout(() => {
+      setChromeVisible(false);
+    }, CHROME_IDLE_MS);
+  }, []);
+
+  useEffect(() => {
+    wake();
+    const events: Array<keyof WindowEventMap> = ['pointermove', 'pointerdown', 'touchstart', 'keydown'];
+    events.forEach((event) => window.addEventListener(event, wake, { passive: true }));
+    return () => {
+      events.forEach((event) => window.removeEventListener(event, wake));
+      if (idleTimer.current) {
+        window.clearTimeout(idleTimer.current);
+      }
+    };
+  }, [wake]);
+
   const selectScene = (scene: SceneState) => {
     setActiveScene(scene);
-    engineRef.current?.transitionToScene(scene, 3.6);
+    engineRef.current?.transitionToScene(scene, 6);
   };
 
+  const chromeClass = chromeVisible || sheetOpen ? 'chrome is-visible' : 'chrome';
+
   return (
-    <main
-      className={`showcase-shell ${isHighContrast ? 'is-high-contrast' : ''}`}
-    >
+    <main className={`lake-shell ${isHighContrast ? 'is-high-contrast' : ''}`}>
       <canvas
         ref={canvasRef}
-        className="showcase-canvas"
-        aria-label="Interactive Windermere lake simulation"
+        className="lake-canvas"
+        aria-label="A quiet, living lake. Drag slowly to drift across the water."
       />
-      <div className="aurora aurora-one" />
-      <div className="aurora aurora-two" />
-      <div className="grain" />
 
-      <section
-        className="hero-panel"
-        aria-label="Windermere experience overview"
-      >
-        <h1>Step into a living lake that feels filmed, not rendered.</h1>
-        <p className="hero-copy">
-          A realtime WebGL destination layer for immersive travel storytelling:
-          cinematic scene states, adaptive ambience, accessible controls, and
-          atmospheric detail that keeps moving after the first wow.
-        </p>
-        <div className="hero-actions">
-          <Button
-            label="Begin guided drift"
-            onClick={() => selectScene('MiddayExpanse')}
-            highContrast={isHighContrast}
-          />
-          <button
-            className="ghost-button"
-            onClick={() => selectScene('TwilightStillness')}
-          >
-            Skip to twilight
-          </button>
+      {!veilGone && (
+        <div className={`veil ${veilLifted ? 'is-lifted' : ''}`} aria-hidden="true">
+          <span className="veil-word">Windermere</span>
         </div>
-      </section>
+      )}
 
-      <aside className="scene-dock" aria-label="Scene presets">
-        {scenePresets.map((scene) => (
+      <header className={chromeClass}>
+        <span className="wordmark">Windermere</span>
+      </header>
+
+      <div className={`${chromeClass} corner`}>
+        <button
+          type="button"
+          className="orb"
+          aria-label={isMuted ? 'Unmute the lake' : 'Mute the lake'}
+          aria-pressed={!isMuted}
+          onClick={() => setIsMuted((m) => !m)}
+        >
+          <SoundIcon muted={isMuted} />
+        </button>
+        <button
+          type="button"
+          className="orb"
+          aria-label="Calm settings"
+          aria-expanded={sheetOpen}
+          onClick={() => setSheetOpen((open) => !open)}
+        >
+          <CalmIcon />
+        </button>
+      </div>
+
+      <p className={`hint ${chromeVisible ? 'is-visible' : ''}`} aria-hidden="true">
+        drag to drift
+      </p>
+
+      <nav className={`${chromeClass} time-dock`} aria-label="Time of day">
+        {scenes.map((scene) => (
           <button
             key={scene.id}
-            className={`scene-card ${activeScene === scene.id ? 'is-active' : ''}`}
+            type="button"
+            className={`time-dot ${activeScene === scene.id ? 'is-active' : ''}`}
+            aria-label={`${scene.label} on the lake`}
+            aria-pressed={activeScene === scene.id}
             onClick={() => selectScene(scene.id)}
           >
-            <strong>{scene.label}</strong>
-            <small>{scene.copy}</small>
+            <span className="dot" aria-hidden="true" />
+            <span className="time-label">{scene.label}</span>
           </button>
         ))}
-      </aside>
+      </nav>
 
-      <section className="systems-panel" aria-label="Rendering systems">
-        <div>
-          <h2>Production-grade sensory stack</h2>
-        </div>
-        <dl>
-          {telemetry.map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      <div className="control-panel" aria-label="Experience controls">
-        <Toggle
-          label="Mute Audio"
-          checked={isMuted}
-          onChange={setIsMuted}
-          highContrast={isHighContrast}
-        />
-        <Toggle
-          label="Reduced Motion"
-          checked={isReducedMotion}
-          onChange={setIsReducedMotion}
-          highContrast={isHighContrast}
-        />
-        <Toggle
-          label="High Contrast UI"
-          checked={isHighContrast}
-          onChange={setIsHighContrast}
-          highContrast={isHighContrast}
-        />
-        <Toggle
-          label="Low Performance Mode"
-          checked={isLowPerformance}
-          onChange={setIsLowPerformance}
-          highContrast={isHighContrast}
-        />
+      <div
+        className={`calm-sheet ${sheetOpen ? 'is-open' : ''}`}
+        role="dialog"
+        aria-label="Calm settings"
+        aria-hidden={!sheetOpen}
+      >
+        <QuietSwitch label="Sound" checked={!isMuted} onChange={(on) => setIsMuted(!on)} />
+        <QuietSwitch label="Reduced motion" checked={isReducedMotion} onChange={setIsReducedMotion} />
+        <QuietSwitch label="High contrast" checked={isHighContrast} onChange={setIsHighContrast} />
+        <QuietSwitch label="Gentle performance" checked={isLowPerformance} onChange={setIsLowPerformance} />
       </div>
     </main>
   );
