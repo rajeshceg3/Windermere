@@ -13,6 +13,7 @@ import { FPSOverlay } from './FPSOverlay';
 import { featureFlags } from './FeatureFlags';
 import { LODManager } from './managers/LODManager';
 import { FrustumCullingManager } from './managers/FrustumCullingManager';
+import { FellsRidgeline } from './scene/FellsRidgeline';
 
 export type SceneState = 'DawnSurface' | 'MiddayExpanse' | 'TwilightStillness';
 
@@ -41,6 +42,7 @@ export class CoreEngine {
   private audioSources: Record<string, GainNode> = {};
 
   private isContextLost = false;
+  private fells!: FellsRidgeline;
   private animationFrameId: number | null = null;
   private canvas: HTMLCanvasElement;
 
@@ -94,6 +96,10 @@ export class CoreEngine {
 
     this.setupDawnLighting();
     this.setupMistParticles();
+
+    this.fells = new FellsRidgeline();
+    this.scene.add(this.fells.group);
+    this.fells.setTintImmediate(new THREE.Color(0x8a7f8e));
 
     this.rowboat = new Rowboat();
     this.rowboat.position.set(0, 0.1, -10);
@@ -156,6 +162,7 @@ export class CoreEngine {
   };
 
   public dispose() {
+    this.fells?.dispose();
     this.canvas.removeEventListener('webglcontextlost', this.onContextLost);
     this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
     if (this.animationFrameId !== null) {
@@ -212,6 +219,7 @@ export class CoreEngine {
     let targetSkyBottom: THREE.Color;
     let targetCloudDensity: number;
     let targetStarDensity: number;
+    let targetFellsTint: THREE.Color;
 
     switch (targetScene) {
       case 'DawnSurface':
@@ -222,6 +230,7 @@ export class CoreEngine {
         targetSkyBottom = new THREE.Color(0xc9ada7);
         targetCloudDensity = 0.1;
         targetStarDensity = 0.0;
+        targetFellsTint = new THREE.Color(0x8a7f8e);
         break;
       case 'MiddayExpanse':
         targetFogColor = new THREE.Color(0x87ceeb);
@@ -231,6 +240,7 @@ export class CoreEngine {
         targetSkyBottom = new THREE.Color(0x87ceeb);
         targetCloudDensity = 0.15;
         targetStarDensity = 0.0;
+        targetFellsTint = new THREE.Color(0x5c7386);
         break;
       case 'TwilightStillness':
         targetFogColor = new THREE.Color(0x1a1a2e);
@@ -240,6 +250,7 @@ export class CoreEngine {
         targetSkyBottom = new THREE.Color(0x302b63);
         targetCloudDensity = 0.05;
         targetStarDensity = 0.05;
+        targetFellsTint = new THREE.Color(0x232344);
         break;
     }
 
@@ -275,6 +286,8 @@ export class CoreEngine {
     if (this.cloudMaterial) {
       gsap.to(this.cloudMaterial.uniforms.cloudDensity, { value: targetCloudDensity, duration });
     }
+
+    this.fells.tintFells(targetFellsTint, duration, gsap);
 
     if (this.starfieldMaterial) {
       gsap.to(this.starfieldMaterial.uniforms.starDensity, { value: targetStarDensity, duration });
@@ -447,4 +460,4 @@ export class CoreEngine {
       this.fpsOverlay.update();
     }
   };
-}
+  }
