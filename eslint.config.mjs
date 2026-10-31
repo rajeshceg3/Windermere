@@ -8,5 +8,16 @@ export default tseslint.config(
   prettier,
   {
     ignores: ['node_modules/', 'dist/', 'apps/web/public/basis/'],
+  },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
+      },
+    },
   }
 );

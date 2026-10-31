@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 export class FishShadows extends THREE.InstancedMesh {
-  private count: number;
+  private fishCount: number;
   private timeOffsets: Float32Array;
   private speeds: Float32Array;
 
@@ -19,7 +19,7 @@ export class FishShadows extends THREE.InstancedMesh {
     });
 
     super(geometry, material, count);
-    this.count = count;
+    this.fishCount = count;
 
     this.timeOffsets = new Float32Array(count);
     this.speeds = new Float32Array(count);
@@ -58,11 +58,13 @@ export class FishShadows extends THREE.InstancedMesh {
     const matrix = new THREE.Matrix4();
     const position = new THREE.Vector3();
     const rotation = new THREE.Euler();
+    const quaternion = new THREE.Quaternion();
     const scale = new THREE.Vector3();
 
-    for (let i = 0; i < this.count; i++) {
+    for (let i = 0; i < this.fishCount; i++) {
       this.getMatrixAt(i, matrix);
-      matrix.decompose(position, rotation, scale);
+      matrix.decompose(position, quaternion, scale);
+      rotation.setFromQuaternion(quaternion);
 
       const t = time * this.speeds[i] + this.timeOffsets[i];
 
