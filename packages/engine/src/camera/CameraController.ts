@@ -44,10 +44,16 @@ export class CameraController {
 
   private addEventListeners() {
     // Passive event listeners for mobile touch adaptation
-    window.addEventListener('pointerdown', this.onPointerDown, { passive: true });
-    window.addEventListener('pointermove', this.onPointerMove, { passive: true });
+    window.addEventListener('pointerdown', this.onPointerDown, {
+      passive: true,
+    });
+    window.addEventListener('pointermove', this.onPointerMove, {
+      passive: true,
+    });
     window.addEventListener('pointerup', this.onPointerUp, { passive: true });
-    window.addEventListener('pointercancel', this.onPointerUp, { passive: true });
+    window.addEventListener('pointercancel', this.onPointerUp, {
+      passive: true,
+    });
     window.addEventListener('resize', this.onWindowResize, { passive: true });
   }
 
@@ -60,6 +66,15 @@ export class CameraController {
   }
 
   private onPointerDown = (event: PointerEvent) => {
+    // Gestures never fight: drags that start on UI chrome belong to the chrome.
+    const target = event.target as HTMLElement | null;
+    if (
+      target &&
+      typeof target.closest === 'function' &&
+      target.closest('header, nav, button, a, .calm-sheet, .corner, .veil')
+    ) {
+      return;
+    }
     this.isInteracting = true;
     this.pointerX = event.clientX;
     this.pointerY = event.clientY;
@@ -84,8 +99,16 @@ export class CameraController {
       this.velocityY -= deltaY * (this.SENSITIVITY * this.speedMultiplier);
     }
 
-    this.velocityX = THREE.MathUtils.clamp(this.velocityX, -this.MAX_VELOCITY, this.MAX_VELOCITY);
-    this.velocityY = THREE.MathUtils.clamp(this.velocityY, -this.MAX_VELOCITY, this.MAX_VELOCITY);
+    this.velocityX = THREE.MathUtils.clamp(
+      this.velocityX,
+      -this.MAX_VELOCITY,
+      this.MAX_VELOCITY
+    );
+    this.velocityY = THREE.MathUtils.clamp(
+      this.velocityY,
+      -this.MAX_VELOCITY,
+      this.MAX_VELOCITY
+    );
   };
 
   private onPointerUp = () => {
@@ -118,12 +141,20 @@ export class CameraController {
     this.targetRotationX = THREE.MathUtils.clamp(
       this.targetRotationX,
       -Math.PI / 6, // Look up slightly
-      Math.PI / 12  // Look down slightly
+      Math.PI / 12 // Look down slightly
     );
 
     // Smoothly interpolate current rotation towards target rotation
-    this.camera.rotation.y = THREE.MathUtils.lerp(this.camera.rotation.y, this.targetRotationY, 0.1);
-    this.camera.rotation.x = THREE.MathUtils.lerp(this.camera.rotation.x, this.targetRotationX, 0.1);
+    this.camera.rotation.y = THREE.MathUtils.lerp(
+      this.camera.rotation.y,
+      this.targetRotationY,
+      0.1
+    );
+    this.camera.rotation.x = THREE.MathUtils.lerp(
+      this.camera.rotation.x,
+      this.targetRotationX,
+      0.1
+    );
 
     // Apply damping to gradually reduce velocity when not interacting
     if (!this.isInteracting) {
@@ -136,7 +167,11 @@ export class CameraController {
     // (A conceptual placeholder for when the volumetric fog shader is implemented;
     // the scene or shader manager would read this value)
     const heightFactor = Math.max(0, this.camera.position.y);
-    const fogModulation = THREE.MathUtils.clamp(1.0 - heightFactor * 0.1, 0.0, 1.0);
+    const fogModulation = THREE.MathUtils.clamp(
+      1.0 - heightFactor * 0.1,
+      0.0,
+      1.0
+    );
     // Setting custom userData property to be consumed by the Atmospheric System later
     this.camera.userData.fogModulation = fogModulation;
   }

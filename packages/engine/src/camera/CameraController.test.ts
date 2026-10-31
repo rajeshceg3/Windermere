@@ -11,8 +11,16 @@ describe('CameraController', () => {
 
   beforeEach(() => {
     canvas = document.createElement('canvas');
-    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 800 });
-    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 600 });
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      writable: true,
+      configurable: true,
+      value: 600,
+    });
     controller = new CameraController(canvas);
   });
 
@@ -45,5 +53,42 @@ describe('CameraController', () => {
     // the property will eventually update
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((controller as any).speedMultiplier).toBeDefined();
+  });
+});
+
+describe('chrome guard (gestures never fight)', () => {
+  it('ignores pointerdown that starts on UI chrome', () => {
+    const canvas = document.createElement('canvas');
+    const c = new CameraController(canvas);
+    const nav = document.createElement('nav');
+    document.body.appendChild(nav);
+    const event = new PointerEvent('pointerdown', {
+      clientX: 100,
+      clientY: 100,
+      bubbles: true,
+    });
+    Object.defineProperty(event, 'target', { value: nav });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (c as any).onPointerDown(event);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((c as any).isInteracting).toBe(false);
+    c.dispose();
+  });
+
+  it('accepts pointerdown that starts on the world canvas', () => {
+    const canvas = document.createElement('canvas');
+    document.body.appendChild(canvas);
+    const c = new CameraController(canvas);
+    const event = new PointerEvent('pointerdown', {
+      clientX: 100,
+      clientY: 100,
+      bubbles: true,
+    });
+    Object.defineProperty(event, 'target', { value: canvas });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (c as any).onPointerDown(event);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((c as any).isInteracting).toBe(true);
+    c.dispose();
   });
 });
