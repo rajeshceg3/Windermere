@@ -42,7 +42,7 @@ function logLearning(line) {
 async function api(path, opts = {}) {
   const res = await fetch(`${API}${path}`, { headers: HDRS, ...opts });
   const text = await res.text();
-  let body = null;
+  let body;
   try { body = JSON.parse(text); } catch { body = text; }
   return { status: res.status, body };
 }
