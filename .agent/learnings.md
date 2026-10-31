@@ -12,3 +12,4 @@ what happened, what to never repeat.
 - 2026-10-31: GitHub /new/<branch> keeps the last directory context; typing a
   full path creates a nested duplicate. Always create files from the explicit
   directory URL (/new/<branch>/<dir>) with just the basename.
+- 2026-10-31: Round ran: build green, dependencies current.
