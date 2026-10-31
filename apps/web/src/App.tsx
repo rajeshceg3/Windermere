@@ -223,6 +223,9 @@ export const App = () => {
         aria-label="Time of day"
         onPointerDown={(e) => {
           dockSwipeX.current = e.clientX;
+          // Capture the pointer so the swipe finishes on the dock even when it
+          // ends outside it; otherwise pointerup lands on the world canvas.
+          e.currentTarget.setPointerCapture?.(e.pointerId);
         }}
         onPointerUp={(e) => {
           if (dockSwipeX.current === null) return;
