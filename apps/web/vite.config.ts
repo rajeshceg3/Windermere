@@ -5,6 +5,7 @@ import sri from 'rollup-plugin-sri';
 import path from 'path';
 
 export default defineConfig({
+  base: './',
   plugins: [
     react(),
     viteCompression({
@@ -28,10 +29,16 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@windermere/engine': path.resolve(__dirname, '../../packages/engine/src'),
+      '@windermere/engine': path.resolve(
+        __dirname,
+        '../../packages/engine/src'
+      ),
       '@windermere/ui': path.resolve(__dirname, '../../packages/ui/src'),
       '@windermere/audio': path.resolve(__dirname, '../../packages/audio/src'),
-      '@windermere/shaders': path.resolve(__dirname, '../../packages/shaders/src'),
+      '@windermere/shaders': path.resolve(
+        __dirname,
+        '../../packages/shaders/src'
+      ),
     },
   },
 });
