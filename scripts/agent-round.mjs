@@ -2,10 +2,11 @@
 /**
  * Nightly agent round (model-free).
  * GitHub Models was retired 2026-07-30, so the round is deterministic:
- *   Check A: build health on develop. Broken -> one GitHub issue (deduped).
+ *   Check A: build health on main. Broken -> one GitHub issue (deduped).
  *   Check B: minor/patch dependency bumps -> draft PR, gated on a green build.
- * Every outcome appends a dated line to .agent/learnings.md, committed back
- * to develop (or offered as a draft PR when the build is broken).
+ * Every outcome appends a dated comment to the pinned "Agent round log" issue:
+ * pushing a log line to main would trigger a production Vercel deploy and CI,
+ * so provenance lives in issue comments instead of git commits (free-tier safe).
  */
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -56,30 +57,55 @@ if (!TOKEN) {
 run(`git config user.name "agent-round[bot]"`);
 run(`git config user.email "agent-round[bot]@users.noreply.github.com"`);
 
+/* The round log lives in one pinned issue, one comment per night: zero git
+   writes, zero CI/Vercel builds, provenance preserved. */
+async function postLogComment(line) {
+  const q = encodeURIComponent(`repo:${OWNER}/${REPO_NAME} is:issue is:open "Agent round log" in:title`);
+  const found = await api(`/search/issues?q=${q}&per_page=1`);
+  let num = found.body && Array.isArray(found.body.items) && found.body.items[0] && found.body.items[0].number;
+  if (!num) {
+    const made = await api(`/repos/${OWNER}/${REPO_NAME}/issues`, {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Agent round log",
+        body: "Nightly round entries, one comment per night, newest at the bottom. Seeded from `.agent/learnings.md`; keep that file as the how-to-read-me pointer.",
+      }),
+    });
+    num = made.body && made.body.number;
+  }
+  if (!num) { console.log("Could not open the round log issue; learning kept in the Actions log only."); return; }
+  const posted = await api(`/repos/${OWNER}/${REPO_NAME}/issues/${num}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ body: `- ${day}: ${line}` }),
+  });
+  console.log(posted.status === 201 ? "Learning logged to the round issue." : `Log comment failed: ${posted.status}`);
+}
+
 /* ---------- Check A: build health ---------- */
 run("corepack enable");
 const install = tryRun("pnpm install --frozen-lockfile");
 const build = install.ok ? tryRun("pnpm --filter web build") : { ok: false, out: install.out };
 
 if (!build.ok) {
-  console.log("Build is broken on develop.");
-  logLearning(`Build broken on develop: ${build.out.split("\n").find((l) => /error/i.test(l)) || "see CI logs"}`);
+  console.log("Build is broken on main.");
+  logLearning(`Build broken on main: ${build.out.split("\n").find((l) => /error/i.test(l)) || "see CI logs"}`);
+  await postLogComment(`Build broken on main: ${build.out.split("\n").find((l) => /error/i.test(l)) || "see CI logs"}`);
   /* dedupe: one open issue at a time */
-  const issues = await api(`/search/issues?q=${encodeURIComponent(`repo:${OWNER}/${REPO_NAME} is:issue is:open "Build broken on develop" in:title`)}&per_page=5`);
+  const issues = await api(`/search/issues?q=${encodeURIComponent(`repo:${OWNER}/${REPO_NAME} is:issue is:open "Build broken on main" in:title`)}&per_page=5`);
   const already = issues.body && Array.isArray(issues.body.items) && issues.body.items.length > 0;
   if (!already) {
     const made = await api(`/repos/${OWNER}/${REPO_NAME}/issues`, {
       method: "POST",
       body: JSON.stringify({
-        title: "Build broken on develop",
-        body: `The nightly round found \`pnpm --filter web build\` failing on develop (${day}).\n\nFirst error line:\n\`\`\`\n${(build.out.split("\n").find((l) => /error/i.test(l)) || "see CI logs").slice(0, 400)}\n\`\`\`\nFiled by the agent round.`,
+        title: "Build broken on main",
+        body: `The nightly round found \`pnpm --filter web build\` failing on main (${day}).\n\nFirst error line:\n\`\`\`\n${(build.out.split("\n").find((l) => /error/i.test(l)) || "see CI logs").slice(0, 400)}\n\`\`\`\nFiled by the agent round.`,
       }),
     });
     console.log(made.status === 201 ? "Issue filed." : `Issue filing failed: ${made.status}`);
   } else {
     console.log("Open agent-round issue already exists; not filing a duplicate.");
   }
-  /* persist the learning via a draft PR (develop may be protected) */
+  /* persist the learning via a draft PR (main may be protected) */
   run(`git checkout -b agent-round/learning-${day.replaceAll("-", "")}`);
   run(`git add .agent/learnings.md`);
   run(`git commit -m "agent round ${day}: build broken (learning only)"`);
@@ -89,7 +115,7 @@ if (!build.ok) {
     body: JSON.stringify({
       title: `Agent round ${day}: build broken (learning)`,
       head: `agent-round/learning-${day.replaceAll("-", "")}`,
-      base: "develop",
+      base: "main",
       draft: true,
       body: "Build gate failed; only the learning is kept. Fix the build, then close or merge.",
     }),
@@ -103,8 +129,7 @@ const pkgPath = "apps/web/package.json";
 if (!existsSync(pkgPath)) {
   console.log("No apps/web/package.json; nothing to garden.");
   logLearning("No package.json found; round idled.");
-  run(`git add -A && git commit -m "agent round ${day}: idle" || true`);
-  tryRun("git push origin HEAD:develop");
+  await postLogComment("No package.json found; round idled.");
   process.exit(0);
 }
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
@@ -126,8 +151,7 @@ for (const name of names) {
 if (bumped.length === 0) {
   console.log("All dependencies current (minor/patch).");
   logLearning("Round ran: build green, dependencies current.");
-  run(`git add .agent/learnings.md && git commit -m "agent round ${day}: all green" || true`);
-  tryRun("git push origin HEAD:develop");
+  await postLogComment("Round ran: build green, dependencies current.");
   process.exit(0);
 }
 console.log(`Bumps available: ${bumped.map(([n, , v]) => `${n}@${v}`).join(", ")}`);
@@ -145,8 +169,7 @@ if (!rebuild.ok) {
   console.log("Bumps break the build; discarding, keeping the learning.");
   logLearning(`Skipped bumps (build failed): ${bumped.map(([n, c, v]) => `${n} ${c}->${v}`).join(", ")}`);
   run("git checkout -- .");
-  run(`git add .agent/learnings.md && git commit -m "agent round ${day}: bumps skipped" || true`);
-  tryRun("git push origin HEAD:develop");
+  await postLogComment(`Skipped bumps (build failed): ${bumped.map(([n, c, v]) => `${n} ${c}->${v}`).join(", ")}`);
   process.exit(0);
 }
 run("git add -A");
@@ -157,7 +180,7 @@ const pr = await api(`/repos/${OWNER}/${REPO_NAME}/pulls`, {
   body: JSON.stringify({
     title: `Agent round ${day}: dependency bumps`,
     head: branch,
-    base: "develop",
+    base: "main",
     draft: true,
     body: `Minor/patch bumps, build green:\n\n${bumped.map(([n, c, v]) => `- ${n}: ${c} -> ${v}`).join("\n")}\n\nFiled by the nightly agent round.`,
   }),
