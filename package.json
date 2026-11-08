@@ -19,6 +19,7 @@
   },
   "scripts": {
     "prepare": "husky",
+    "test:release-effects": "node --test tests/agent-round/release-effects.check.mjs",
     "build": "pnpm --filter @windermere/web build"
   },
   "dependencies": {
