@@ -105,21 +105,8 @@ if (!build.ok) {
   } else {
     console.log("Open agent-round issue already exists; not filing a duplicate.");
   }
-  /* persist the learning via a draft PR (main may be protected) */
-  run(`git checkout -b agent-round/learning-${day.replaceAll("-", "")}`);
-  run(`git add .agent/learnings.md`);
-  run(`git commit -m "agent round ${day}: build broken (learning only)"`);
-  run(`git push -u origin HEAD`);
-  await api(`/repos/${OWNER}/${REPO_NAME}/pulls`, {
-    method: "POST",
-    body: JSON.stringify({
-      title: `Agent round ${day}: build broken (learning)`,
-      head: `agent-round/learning-${day.replaceAll("-", "")}`,
-      base: "main",
-      draft: true,
-      body: "Build gate failed; only the learning is kept. Fix the build, then close or merge.",
-    }),
-  });
+  // The issue/comment and Actions output retain the failure evidence.
+  // A learning-only push would spend a deployment while leaving the build broken.
   process.exit(0);
 }
 console.log("Build is green.");
