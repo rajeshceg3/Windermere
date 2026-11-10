@@ -316,3 +316,6 @@ header.chrome {
 .time-dot { min-width:52px;min-height:48px;color:#f8fbff; }
 
 .quiet-row { font-size:1rem;min-height:44px; }
+
+/* The place name remains readable after the old immersive chrome timer expires. */
+header.chrome { opacity:1; transform:none; }
