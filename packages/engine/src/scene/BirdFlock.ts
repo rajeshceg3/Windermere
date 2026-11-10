@@ -23,14 +23,31 @@ export class BirdFlock extends THREE.Group {
     this.curve = new THREE.CatmullRomCurve3(pathPoints);
 
     // Create a very simple V-shaped bird geometry (or cone)
-    const birdGeometry = new THREE.ConeGeometry(0.5, 1.5, 3);
-    birdGeometry.rotateX(Math.PI / 2); // Point forward along Z
-    const birdMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    const birdGeometry = new THREE.BufferGeometry();
+    birdGeometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(
+        [
+          -0.55, 0, 0, 0, -0.12, 0.07, 0, -0.02, -0.12, 0, -0.12, 0.07, 0.55, 0,
+          0, 0, -0.02, -0.12,
+        ],
+        3
+      )
+    );
+    birdGeometry.computeVertexNormals(); // Point forward along Z
+    const birdMaterial = new THREE.MeshBasicMaterial({
+      color: 0x26333a,
+      side: THREE.DoubleSide,
+    });
 
     // Number of birds in the flock
     this.flockSize = 5;
 
-    this.instancedMesh = new THREE.InstancedMesh(birdGeometry, birdMaterial, this.flockSize);
+    this.instancedMesh = new THREE.InstancedMesh(
+      birdGeometry,
+      birdMaterial,
+      this.flockSize
+    );
     this.instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
     for (let i = 0; i < this.flockSize; i++) {
@@ -53,7 +70,7 @@ export class BirdFlock extends THREE.Group {
     for (let i = 0; i < this.flockSize; i++) {
       const offsetTime = this.timeOffsets[i];
       // Calculate normalized time along curve (0 to 1)
-      const t = ((time * this.speed) + offsetTime) % 1.0;
+      const t = (time * this.speed + offsetTime) % 1.0;
 
       // Get position and tangent from the curve
       const position = this.curve.getPointAt(t);

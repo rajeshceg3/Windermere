@@ -2,6 +2,8 @@ import * as THREE from 'three';
 
 const vertexShader = `
 uniform float uTime;
+uniform mat4 uTextureMatrix;
+varying vec4 vReflectionCoord;
 varying vec2 vUv;
 varying vec4 vScreenPos;
 varying vec3 vViewPosition;
@@ -12,6 +14,7 @@ void main() {
 
     vec4 worldPosition = modelMatrix * vec4(position, 1.0);
     vWorldPosition = worldPosition.xyz;
+    vReflectionCoord=uTextureMatrix*worldPosition;
 
     vec4 mvPosition = viewMatrix * worldPosition;
     vViewPosition = -mvPosition.xyz;
@@ -26,6 +29,7 @@ void main() {
 const fragmentShader = `
 uniform float uTime;
 uniform sampler2D tReflectionMap;
+varying vec4 vReflectionCoord;
 uniform sampler2D tNormalMap;
 uniform float uReflectionStrength;
 uniform vec3 uWaterColor;
@@ -38,27 +42,12 @@ varying vec3 vWorldPosition;
 
 void main() {
     // 1. Calculate screen coordinates for reflection map sampling
-    vec2 screenCoord = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
+    vec2 screenCoord = vReflectionCoord.xy/vReflectionCoord.w;
 
-    // 2. Animate UVs for normal mapping (time-based ripple uniform)
-    vec2 uv1 = vUv * 4.0 + vec2(uTime * 0.05, uTime * 0.02);
-    vec2 uv2 = vUv * 6.0 + vec2(-uTime * 0.03, uTime * 0.04);
-
-    // 3. Sample normal map twice for complex ripple pattern (subtle normal map distortion)
-    vec4 normal1 = texture2D(tNormalMap, uv1);
-    vec4 normal2 = texture2D(tNormalMap, uv2);
-
-    // Unpack normals from [0, 1] to [-1, 1] and blend
-    vec3 n1 = normal1.xyz * 2.0 - 1.0;
-    vec3 n2 = normal2.xyz * 2.0 - 1.0;
-    vec3 blendedNormal = normalize(n1 + n2);
-
-    // Scale down normal distortion so it's subtle
-    blendedNormal.xy *= 0.15;
-    blendedNormal = normalize(blendedNormal);
-
-    // Distort screen coordinates using the blended normal
-    vec2 distortedScreenCoord = screenCoord + blendedNormal.xy * 0.1;
+    // Analytic world-space ripples work even without a normal-map asset.
+    vec2 wave=vec2(sin(vWorldPosition.x*1.5+vWorldPosition.z*.4+uTime*.8),cos(vWorldPosition.z*2.3-vWorldPosition.x*.3-uTime*.6));
+    vec3 blendedNormal=normalize(vec3(wave.x*.035,1.0,wave.y*.025));
+    vec2 distortedScreenCoord=screenCoord+wave*.003;
 
     // Clamp coordinates to avoid sampling outside the texture
     distortedScreenCoord = clamp(distortedScreenCoord, 0.001, 0.999);
@@ -67,8 +56,8 @@ void main() {
     vec4 reflectionColor = texture2D(tReflectionMap, distortedScreenCoord);
 
     // 5. Fresnel effect (amount of reflection based on view angle)
-    vec3 viewDir = normalize(vViewPosition);
-    vec3 worldNormal = normalize(vec3(0.0, 1.0, 0.0) + vec3(blendedNormal.x, 0.0, blendedNormal.y));
+    vec3 viewDir = normalize(cameraPosition-vWorldPosition);
+    vec3 worldNormal = blendedNormal;
 
     float fresnel = dot(viewDir, worldNormal);
     fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
@@ -86,6 +75,7 @@ void main() {
     // 7. Mix water color and reflection (optimized fragment cost - simple mixing)
     vec3 finalColor = mix(uWaterColor, reflectionColor.rgb, fresnel * uReflectionStrength);
     finalColor += specularColor;
+    finalColor = mix(uWaterColor,finalColor,.35+.65*smoothstep(0.0,.35,screenCoord.y));
 
     gl_FragColor = vec4(finalColor, 1.0);
 
@@ -96,39 +86,48 @@ void main() {
 `;
 
 export interface WaterMaterialParams {
-    reflectionTexture?: THREE.Texture | null;
-    normalTexture?: THREE.Texture | null;
-    waterColor?: THREE.Color;
-    lightDirection?: THREE.Vector3;
-    reflectionStrength?: number;
+  reflectionTexture?: THREE.Texture | null;
+  normalTexture?: THREE.Texture | null;
+  waterColor?: THREE.Color;
+  lightDirection?: THREE.Vector3;
+  reflectionStrength?: number;
 }
 
 export class WaterMaterial extends THREE.ShaderMaterial {
-    constructor(params: WaterMaterialParams = {}) {
-        super({
-            vertexShader,
-            fragmentShader,
-            uniforms: {
-                uTime: { value: 0.0 },
-                tReflectionMap: { value: params.reflectionTexture || null },
-                tNormalMap: { value: params.normalTexture || null },
-                uWaterColor: { value: params.waterColor || new THREE.Color(0x001e0f) },
-                uLightDirection: { value: params.lightDirection || new THREE.Vector3(1, 1, 1).normalize() },
-                uReflectionStrength: { value: params.reflectionStrength !== undefined ? params.reflectionStrength : 0.8 },
-            },
-            transparent: true,
-        });
-    }
+  constructor(params: WaterMaterialParams = {}) {
+    super({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        uTime: { value: 0.0 },
+        uTextureMatrix: { value: new THREE.Matrix4() },
+        tReflectionMap: { value: params.reflectionTexture || null },
+        tNormalMap: { value: params.normalTexture || null },
+        uWaterColor: { value: params.waterColor || new THREE.Color(0x183f4c) },
+        uLightDirection: {
+          value:
+            params.lightDirection || new THREE.Vector3(1, 1, 1).normalize(),
+        },
+        uReflectionStrength: {
+          value:
+            params.reflectionStrength !== undefined
+              ? params.reflectionStrength
+              : 0.8,
+        },
+      },
+      transparent: true,
+    });
+  }
 
-    public updateTime(deltaTime: number) {
-        this.uniforms.uTime.value += deltaTime;
-    }
+  public updateTime(deltaTime: number) {
+    this.uniforms.uTime.value += deltaTime;
+  }
 
-    public setReflectionTexture(texture: THREE.Texture) {
-        this.uniforms.tReflectionMap.value = texture;
-    }
+  public setReflectionTexture(texture: THREE.Texture) {
+    this.uniforms.tReflectionMap.value = texture;
+  }
 
-    public setNormalTexture(texture: THREE.Texture) {
-        this.uniforms.tNormalMap.value = texture;
-    }
+  public setNormalTexture(texture: THREE.Texture) {
+    this.uniforms.tNormalMap.value = texture;
+  }
 }

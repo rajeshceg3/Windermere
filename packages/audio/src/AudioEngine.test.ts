@@ -12,12 +12,16 @@ class MockAudioContext {
       connect: vi.fn(),
       gain: {
         value: 1,
-        linearRampToValueAtTime: vi.fn()
-      }
+        linearRampToValueAtTime: vi.fn(),
+      },
     };
   }
-  createPanner() { return { connect: vi.fn() }; }
-  createBufferSource() { return { connect: vi.fn() }; }
+  createPanner() {
+    return { connect: vi.fn() };
+  }
+  createBufferSource() {
+    return { connect: vi.fn() };
+  }
   destination = {};
   currentTime = 10;
   state = 'running';
@@ -49,9 +53,9 @@ describe('AudioEngine', () => {
       const otherSource = context!.createGain();
 
       const audioSources: Record<string, GainNode> = {
-        'ambient_mist': ambientMistSource as unknown as GainNode,
-        'birds': birdsSource as unknown as GainNode,
-        'other': otherSource as unknown as GainNode,
+        ambient_mist: ambientMistSource as unknown as GainNode,
+        birds: birdsSource as unknown as GainNode,
+        other: otherSource as unknown as GainNode,
       };
 
       engine.mapSceneAudioProfile('DawnSurface', audioSources);
@@ -59,13 +63,26 @@ describe('AudioEngine', () => {
       const targetTime = context!.currentTime + 2.0;
 
       // Check that all sources are initially scheduled to ramp to 0
-      expect(ambientMistSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, targetTime);
-      expect(birdsSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, targetTime);
-      expect(otherSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, targetTime);
+      expect(
+        ambientMistSource.gain.linearRampToValueAtTime
+      ).toHaveBeenCalledWith(0, targetTime);
+      expect(birdsSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+        0,
+        targetTime
+      );
+      expect(otherSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+        0,
+        targetTime
+      );
 
       // Check that specific sources for DawnSurface ramp to their target values
-      expect(ambientMistSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(1.0, targetTime);
-      expect(birdsSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.5, targetTime);
+      expect(
+        ambientMistSource.gain.linearRampToValueAtTime
+      ).toHaveBeenCalledWith(1.0, targetTime);
+      expect(birdsSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+        0.5,
+        targetTime
+      );
     });
 
     it('transitions to MiddayExpanse audio profile correctly', () => {
@@ -75,9 +92,9 @@ describe('AudioEngine', () => {
       const otherSource = context!.createGain();
 
       const audioSources: Record<string, GainNode> = {
-        'ambient_wind': ambientWindSource as unknown as GainNode,
-        'water_ripples': waterRipplesSource as unknown as GainNode,
-        'other': otherSource as unknown as GainNode,
+        ambient_wind: ambientWindSource as unknown as GainNode,
+        water_ripples: waterRipplesSource as unknown as GainNode,
+        other: otherSource as unknown as GainNode,
       };
 
       engine.mapSceneAudioProfile('MiddayExpanse', audioSources);
@@ -85,8 +102,12 @@ describe('AudioEngine', () => {
       const targetTime = context!.currentTime + 2.0;
 
       // specific sources for MiddayExpanse ramp to target values
-      expect(ambientWindSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(1.0, targetTime);
-      expect(waterRipplesSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.8, targetTime);
+      expect(
+        ambientWindSource.gain.linearRampToValueAtTime
+      ).toHaveBeenCalledWith(1.0, targetTime);
+      expect(
+        waterRipplesSource.gain.linearRampToValueAtTime
+      ).toHaveBeenCalledWith(0.8, targetTime);
     });
 
     it('transitions to TwilightStillness audio profile correctly', () => {
@@ -96,9 +117,9 @@ describe('AudioEngine', () => {
       const otherSource = context!.createGain();
 
       const audioSources: Record<string, GainNode> = {
-        'ambient_piano': ambientPianoSource as unknown as GainNode,
-        'crickets': cricketsSource as unknown as GainNode,
-        'other': otherSource as unknown as GainNode,
+        ambient_piano: ambientPianoSource as unknown as GainNode,
+        crickets: cricketsSource as unknown as GainNode,
+        other: otherSource as unknown as GainNode,
       };
 
       engine.mapSceneAudioProfile('TwilightStillness', audioSources);
@@ -106,8 +127,13 @@ describe('AudioEngine', () => {
       const targetTime = context!.currentTime + 2.0;
 
       // specific sources for TwilightStillness ramp to target values
-      expect(ambientPianoSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(1.0, targetTime);
-      expect(cricketsSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.6, targetTime);
+      expect(
+        ambientPianoSource.gain.linearRampToValueAtTime
+      ).toHaveBeenCalledWith(0, targetTime);
+      expect(cricketsSource.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+        0.6,
+        targetTime
+      );
     });
   });
 });

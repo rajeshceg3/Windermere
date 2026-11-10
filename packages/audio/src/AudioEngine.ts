@@ -2,7 +2,7 @@ export class AudioEngine {
   private context: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private isInitialized = false;
-  private isMuted = false;
+  private isMuted = true;
 
   constructor() {
     console.log('Audio Engine Initialized');
@@ -12,8 +12,12 @@ export class AudioEngine {
     if (this.isInitialized) return;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioWindow = window as Window & {
+        webkitAudioContext?: typeof AudioContext;
+      };
+      const Context = window.AudioContext || audioWindow.webkitAudioContext;
+      if (!Context) throw new Error('Web Audio unavailable');
+      this.context = new Context();
 
       this.masterGain = this.context.createGain();
       this.masterGain.connect(this.context.destination);
@@ -40,7 +44,10 @@ export class AudioEngine {
     }
   }
 
-  public createSpatialSource(buffer: AudioBuffer, loop = true): { source: AudioBufferSourceNode, panner: PannerNode } | null {
+  public createSpatialSource(
+    buffer: AudioBuffer,
+    loop = true
+  ): { source: AudioBufferSourceNode; panner: PannerNode } | null {
     if (!this.context || !this.masterGain) return null;
 
     const source = this.context.createBufferSource();
@@ -64,8 +71,8 @@ export class AudioEngine {
 
   public updateSpatialSource(
     panner: PannerNode,
-    position: { x: number, y: number, z: number },
-    orientation: { x: number, y: number, z: number } = { x: 0, y: 0, z: -1 }
+    position: { x: number; y: number; z: number },
+    orientation: { x: number; y: number; z: number } = { x: 0, y: 0, z: -1 }
   ) {
     if (!this.context) return;
 
@@ -92,9 +99,9 @@ export class AudioEngine {
   }
 
   public setListenerPosition(
-    position: { x: number, y: number, z: number },
-    forward: { x: number, y: number, z: number },
-    up: { x: number, y: number, z: number } = { x: 0, y: 1, z: 0 }
+    position: { x: number; y: number; z: number },
+    forward: { x: number; y: number; z: number },
+    up: { x: number; y: number; z: number } = { x: 0, y: 1, z: 0 }
   ) {
     if (!this.context) return;
 
@@ -119,31 +126,47 @@ export class AudioEngine {
       listener.upY.linearRampToValueAtTime(up.y, time);
       listener.upZ.linearRampToValueAtTime(up.z, time);
     } else {
-      listener.setOrientation(forward.x, forward.y, forward.z, up.x, up.y, up.z);
+      listener.setOrientation(
+        forward.x,
+        forward.y,
+        forward.z,
+        up.x,
+        up.y,
+        up.z
+      );
     }
   }
 
-  public mapSceneAudioProfile(scene: 'DawnSurface' | 'MiddayExpanse' | 'TwilightStillness', audioSources: Record<string, GainNode>) {
+  public mapSceneAudioProfile(
+    scene: 'DawnSurface' | 'MiddayExpanse' | 'TwilightStillness',
+    audioSources: Record<string, GainNode>
+  ) {
     if (!this.context) return;
     const time = this.context.currentTime + 2.0; // 2 seconds crossfade
 
     // Default volumes for all scenes to zero
-    Object.values(audioSources).forEach(source => {
+    Object.values(audioSources).forEach((source) => {
       source.gain.linearRampToValueAtTime(0, time);
     });
 
     switch (scene) {
       case 'DawnSurface':
-        if (audioSources['ambient_mist']) audioSources['ambient_mist'].gain.linearRampToValueAtTime(1.0, time);
-        if (audioSources['birds']) audioSources['birds'].gain.linearRampToValueAtTime(0.5, time);
+        if (audioSources['ambient_mist'])
+          audioSources['ambient_mist'].gain.linearRampToValueAtTime(1.0, time);
+        if (audioSources['birds'])
+          audioSources['birds'].gain.linearRampToValueAtTime(0.5, time);
         break;
       case 'MiddayExpanse':
-        if (audioSources['ambient_wind']) audioSources['ambient_wind'].gain.linearRampToValueAtTime(1.0, time);
-        if (audioSources['water_ripples']) audioSources['water_ripples'].gain.linearRampToValueAtTime(0.8, time);
+        if (audioSources['ambient_wind'])
+          audioSources['ambient_wind'].gain.linearRampToValueAtTime(1.0, time);
+        if (audioSources['water_ripples'])
+          audioSources['water_ripples'].gain.linearRampToValueAtTime(0.8, time);
         break;
       case 'TwilightStillness':
-        if (audioSources['ambient_piano']) audioSources['ambient_piano'].gain.linearRampToValueAtTime(1.0, time);
-        if (audioSources['crickets']) audioSources['crickets'].gain.linearRampToValueAtTime(0.6, time);
+        if (audioSources['water_ripples'])
+          audioSources['water_ripples'].gain.linearRampToValueAtTime(0.5, time);
+        if (audioSources['crickets'])
+          audioSources['crickets'].gain.linearRampToValueAtTime(0.6, time);
         break;
     }
   }
@@ -157,10 +180,17 @@ export class AudioEngine {
     targetGainNode.gain.linearRampToValueAtTime(targetVolume, time);
   }
 
+  public dispose() {
+    if (this.context) void this.context.close();
+  }
+
   public setMute(mute: boolean) {
     this.isMuted = mute;
     if (this.masterGain && this.context) {
-      this.masterGain.gain.linearRampToValueAtTime(mute ? 0 : 1, this.context.currentTime + 0.1);
+      this.masterGain.gain.linearRampToValueAtTime(
+        mute ? 0 : 1,
+        this.context.currentTime + 0.1
+      );
     }
   }
 }
