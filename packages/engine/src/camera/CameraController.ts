@@ -10,7 +10,9 @@ export class CameraController {
   private pointerX = 0;
   private pointerY = 0;
 
-  private targetRotationX = 0;
+  private entryYaw = 0;
+  private entryPitch = -0.08;
+  private targetRotationX = -0.08;
   private targetRotationY = 0;
 
   private velocityX = 0;
@@ -24,9 +26,9 @@ export class CameraController {
   private isReducedMotion = false;
 
   // Default starting position
-  private basePosition = new THREE.Vector3(0, 2, 5);
+  private basePosition = new THREE.Vector3(0, 3.4, 5);
 
-  constructor(canvas: HTMLCanvasElement, fov = 75, near = 0.1, far = 1000) {
+  constructor(canvas: HTMLCanvasElement, fov = 55, near = 0.1, far = 1000) {
     this.canvas = canvas;
     this.camera = new THREE.PerspectiveCamera(
       fov,
@@ -127,12 +129,44 @@ export class CameraController {
     this.isReducedMotion = reduced;
   }
 
+  public resetView() {
+    this.velocityX = this.velocityY = 0;
+    this.targetRotationY = this.entryYaw;
+    this.targetRotationX = this.entryPitch;
+    this.camera.rotation.set(this.entryPitch, this.entryYaw, 0);
+  }
+
+  public setChapterView(scene: string) {
+    const views: Record<
+      string,
+      { pos: [number, number, number]; yaw: number; pitch: number }
+    > = {
+      DawnSurface: { pos: [0, 3.4, 5], yaw: 0, pitch: -0.08 },
+      MiddayExpanse: { pos: [2, 4.2, 7], yaw: 0.08, pitch: -0.11 },
+      TwilightStillness: { pos: [-1, 3.1, 5], yaw: -0.03, pitch: -0.07 },
+    };
+    const v = views[scene];
+    if (!v) return;
+    this.velocityX = this.velocityY = 0;
+    this.entryYaw = v.yaw;
+    this.entryPitch = v.pitch;
+    this.targetRotationX = v.pitch;
+    this.targetRotationY = v.yaw;
+    gsap.to(this.basePosition, {
+      x: v.pos[0],
+      y: v.pos[1],
+      z: v.pos[2],
+      duration: this.isReducedMotion ? 0 : 3,
+    });
+  }
+
   private onWindowResize = () => {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
   };
 
   public update() {
+    this.camera.position.copy(this.basePosition);
     // Apply floating inertia model
     this.targetRotationY += this.velocityX;
     this.targetRotationX += this.velocityY;
@@ -163,6 +197,8 @@ export class CameraController {
       this.velocityY *= currentDamping;
     }
 
+    this.canvas.dataset.yaw = this.camera.rotation.y.toFixed(5);
+    this.canvas.dataset.pitch = this.camera.rotation.x.toFixed(5);
     // Depth-sensitive fog modulation based on camera positioning
     // (A conceptual placeholder for when the volumetric fog shader is implemented;
     // the scene or shader manager would read this value)

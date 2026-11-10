@@ -194,6 +194,14 @@ export const App = () => {
         <button
           type="button"
           className="orb"
+          aria-label="Reset lake view"
+          onClick={() => engineRef.current?.resetView()}
+        >
+          <span aria-hidden="true">↺</span>
+        </button>
+        <button
+          type="button"
+          className="orb"
           aria-label={isMuted ? 'Unmute the lake' : 'Mute the lake'}
           aria-pressed={!isMuted}
           onClick={() => setIsMuted((m) => !m)}
@@ -271,6 +279,7 @@ export const App = () => {
         role="dialog"
         aria-label="Calm settings"
         aria-hidden={!sheetOpen}
+        inert={!sheetOpen}
       >
         <QuietSwitch
           label="Sound"

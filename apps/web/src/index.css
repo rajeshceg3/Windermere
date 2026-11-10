@@ -300,3 +300,19 @@ header.chrome {
   .chrome, .orb, .quiet-thumb, .time-dot .dot { transition-duration: .15s; }
   .hint { animation: none; }
 }
+
+/* Legible, compact scene chrome, independent of sky colour. */
+.wordmark { color:#f8fbff; background:rgba(9,17,26,.85); padding:.3rem .45rem; border-radius:.4rem; text-shadow:none; }
+.orb { width:44px;height:44px;background:rgba(9,17,26,.85);color:#f8fbff; }
+.time-dock { background:rgba(9,17,26,.88); }
+@media(max-width:500px){.wordmark{font-size:1rem;letter-spacing:.12em}header.chrome{left:.7rem}.corner{right:.7rem;gap:.35rem}}
+
+.time-label { opacity:1; transform:none; font-size:1rem; letter-spacing:.12em; }
+.calm-sheet { background:rgba(8,15,23,.96); }
+.hint { color:#f8fbff; background:rgba(9,17,26,.85); padding:.2rem .5rem; border-radius:.4rem; }
+.corner.chrome { opacity:1;transform:none; }
+
+.time-dock.chrome { opacity:1; transform:translate(-50%,0);pointer-events:auto; }
+.time-dot { min-width:52px;min-height:48px;color:#f8fbff; }
+
+.quiet-row { font-size:1rem;min-height:44px; }

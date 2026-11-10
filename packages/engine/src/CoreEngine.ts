@@ -2,7 +2,12 @@ import * as THREE from 'three';
 import { CameraController } from './camera/CameraController';
 import { WaterManager } from './scene/WaterManager';
 import { gsap } from 'gsap';
-import { MistMaterial, VolumetricCloudMaterial, SkyDomeMaterial, StarfieldMaterial } from '@windermere/shaders';
+import {
+  MistMaterial,
+  VolumetricCloudMaterial,
+  SkyDomeMaterial,
+  StarfieldMaterial,
+} from '@windermere/shaders';
 import { Rowboat } from './scene/Rowboat';
 import { BirdFlock } from './scene/BirdFlock';
 import { SailboatInstancing } from './scene/SailboatInstancing';
@@ -14,6 +19,7 @@ import { featureFlags } from './FeatureFlags';
 import { LODManager } from './managers/LODManager';
 import { FrustumCullingManager } from './managers/FrustumCullingManager';
 import { FellsRidgeline } from './scene/FellsRidgeline';
+import { WoodedShore } from './scene/WoodedShore';
 
 export type SceneState = 'DawnSurface' | 'MiddayExpanse' | 'TwilightStillness';
 
@@ -41,6 +47,8 @@ export class CoreEngine {
   // Audio sources map
   private audioSources: Record<string, GainNode> = {};
 
+  private reducedMotion = false;
+  private birdTimer: number | null = null;
   private isContextLost = false;
   private fells!: FellsRidgeline;
   private animationFrameId: number | null = null;
@@ -59,7 +67,12 @@ export class CoreEngine {
     // Log shader compilation failures
     if (this.renderer.debug) {
       this.renderer.debug.checkShaderErrors = true;
-      this.renderer.debug.onShaderError = (gl, program, glVertexShader, glFragmentShader) => {
+      this.renderer.debug.onShaderError = (
+        gl,
+        program,
+        glVertexShader,
+        glFragmentShader
+      ) => {
         console.error('WebGL Shader Compilation Error!');
         const vertexLog = gl.getShaderInfoLog(glVertexShader);
         if (vertexLog) {
@@ -76,10 +89,15 @@ export class CoreEngine {
     this.renderer.setClearColor(0x9a8c98);
 
     // Initialize Water Reflection Manager
-    this.waterManager = new WaterManager(this.renderer, this.scene, this.cameraController.camera, {
-      waterHeight: 0,
-      renderTargetSize: 512
-    });
+    this.waterManager = new WaterManager(
+      this.renderer,
+      this.scene,
+      this.cameraController.camera,
+      {
+        waterHeight: 0,
+        renderTargetSize: window.innerWidth < 600 ? 1024 : 2048,
+      }
+    );
 
     this.clock = new THREE.Clock();
 
@@ -99,10 +117,11 @@ export class CoreEngine {
 
     this.fells = new FellsRidgeline();
     this.scene.add(this.fells.group);
-    this.fells.setTintImmediate(new THREE.Color(0x8a7f8e));
+    this.fells.setTintImmediate(new THREE.Color(0x416653));
 
+    this.scene.add(new WoodedShore());
     this.rowboat = new Rowboat();
-    this.rowboat.position.set(0, 0.1, -10);
+    this.rowboat.position.set(0, 0.1, -13);
     this.scene.add(this.rowboat);
     this.lodManager.addLOD(this.rowboat.lod);
 
@@ -119,7 +138,7 @@ export class CoreEngine {
 
     this.setupStarfield();
 
-    this.fireflies = new FireflyParticleSystem(1000);
+    this.fireflies = new FireflyParticleSystem(0);
     this.scene.add(this.fireflies);
 
     this.audioEngine = new AudioEngine();
@@ -138,7 +157,11 @@ export class CoreEngine {
 
   private setupContextLossHandling() {
     this.canvas.addEventListener('webglcontextlost', this.onContextLost, false);
-    this.canvas.addEventListener('webglcontextrestored', this.onContextRestored, false);
+    this.canvas.addEventListener(
+      'webglcontextrestored',
+      this.onContextRestored,
+      false
+    );
   }
 
   private onContextLost = (event: Event) => {
@@ -162,9 +185,15 @@ export class CoreEngine {
   };
 
   public dispose() {
+    if (this.birdTimer !== null) window.clearInterval(this.birdTimer);
     this.fells?.dispose();
+    this.cameraController.dispose();
+    this.audioEngine.dispose();
     this.canvas.removeEventListener('webglcontextlost', this.onContextLost);
-    this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
+    this.canvas.removeEventListener(
+      'webglcontextrestored',
+      this.onContextRestored
+    );
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
     }
@@ -184,10 +213,56 @@ export class CoreEngine {
       this.audioSources['ambient_mist'] = context.createGain();
       this.audioSources['birds'] = context.createGain();
 
-      Object.values(this.audioSources).forEach(source => {
+      Object.values(this.audioSources).forEach((source) => {
         source.connect(this.audioEngine.getMasterGain()!);
       });
 
+      const noise = context.createBuffer(
+        1,
+        context.sampleRate * 4,
+        context.sampleRate
+      );
+      const data = noise.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < data.length; i++) {
+        last = (last + (Math.random() * 2 - 1) * 0.02) / 1.02;
+        data[i] = last * 3.5;
+      }
+      for (const key of [
+        'ambient_wind',
+        'water_ripples',
+        'ambient_mist',
+        'crickets',
+      ]) {
+        const source = context.createBufferSource();
+        source.buffer = noise;
+        source.loop = true;
+        const filter = context.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value =
+          key === 'water_ripples' ? 750 : key === 'crickets' ? 2800 : 240;
+        filter.Q.value = 0.6;
+        const level = context.createGain();
+        level.gain.value = key === 'crickets' ? 0.015 : 0.055;
+        source.connect(filter).connect(level).connect(this.audioSources[key]);
+        source.start();
+      }
+      // Quiet, sparse synthetic bird calls. No autoplay: context resumes on sound-button tap.
+      const chirp = () => {
+        if (context.state === 'running') {
+          const o = context.createOscillator(),
+            g = context.createGain(),
+            t = context.currentTime;
+          o.frequency.setValueAtTime(2400, t);
+          o.frequency.exponentialRampToValueAtTime(1300, t + 0.14);
+          g.gain.setValueAtTime(0.024, t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+          o.connect(g).connect(this.audioSources['birds']);
+          o.start();
+          o.stop(t + 0.25);
+        }
+      };
+      this.birdTimer = window.setInterval(chirp, 5400);
       // Initialize with Dawn audio profile
       this.audioEngine.mapSceneAudioProfile('DawnSurface', this.audioSources);
     }
@@ -195,11 +270,13 @@ export class CoreEngine {
 
   public toggleAudioMute(mute: boolean) {
     if (this.audioEngine) {
+      if (!mute) void this.audioEngine.resume();
       this.audioEngine.setMute(mute);
     }
   }
 
   public setReducedMotion(reduced: boolean) {
+    this.reducedMotion = reduced;
     if (this.cameraController) {
       this.cameraController.setReducedMotion(reduced);
     }
@@ -207,11 +284,18 @@ export class CoreEngine {
 
   public setLowPerformance(isLow: boolean) {
     if (this.renderer) {
-      this.renderer.setPixelRatio(isLow ? 1 : Math.min(window.devicePixelRatio, 2));
+      this.renderer.setPixelRatio(
+        isLow ? 1 : Math.min(window.devicePixelRatio, 2)
+      );
     }
   }
 
+  public resetView() {
+    this.cameraController.resetView();
+  }
+
   public transitionToScene(targetScene: SceneState, duration: number = 3.0) {
+    if (this.reducedMotion) duration = 0;
     let targetFogColor: THREE.Color;
     let targetFogDensity: number;
     let targetClearColor: THREE.Color;
@@ -224,19 +308,19 @@ export class CoreEngine {
     switch (targetScene) {
       case 'DawnSurface':
         targetFogColor = new THREE.Color(0x9a8c98);
-        targetFogDensity = 0.02;
+        targetFogDensity = 0.0015;
         targetClearColor = new THREE.Color(0x9a8c98);
         targetSkyTop = new THREE.Color(0x87ceeb);
-        targetSkyBottom = new THREE.Color(0xc9ada7);
+        targetSkyBottom = new THREE.Color(0xeac0a4);
         targetCloudDensity = 0.1;
         targetStarDensity = 0.0;
-        targetFellsTint = new THREE.Color(0x8a7f8e);
+        targetFellsTint = new THREE.Color(0x416653);
         break;
       case 'MiddayExpanse':
         targetFogColor = new THREE.Color(0x87ceeb);
-        targetFogDensity = 0.005;
+        targetFogDensity = 0.0012;
         targetClearColor = new THREE.Color(0x87ceeb);
-        targetSkyTop = new THREE.Color(0x0077ff);
+        targetSkyTop = new THREE.Color(0x4f96bd);
         targetSkyBottom = new THREE.Color(0x87ceeb);
         targetCloudDensity = 0.15;
         targetStarDensity = 0.0;
@@ -244,7 +328,7 @@ export class CoreEngine {
         break;
       case 'TwilightStillness':
         targetFogColor = new THREE.Color(0x1a1a2e);
-        targetFogDensity = 0.03;
+        targetFogDensity = 0.0036;
         targetClearColor = new THREE.Color(0x1a1a2e);
         targetSkyTop = new THREE.Color(0x0f0c29);
         targetSkyBottom = new THREE.Color(0x302b63);
@@ -257,7 +341,12 @@ export class CoreEngine {
     // GSAP visual transitions
     const fog = this.scene.fog as THREE.FogExp2;
     if (fog) {
-      gsap.to(fog.color, { r: targetFogColor.r, g: targetFogColor.g, b: targetFogColor.b, duration });
+      gsap.to(fog.color, {
+        r: targetFogColor.r,
+        g: targetFogColor.g,
+        b: targetFogColor.b,
+        duration,
+      });
       gsap.to(fog, { density: targetFogDensity, duration });
     }
 
@@ -265,37 +354,62 @@ export class CoreEngine {
     this.renderer.getClearColor(currentClearColor);
 
     // Animate clear color via a dummy object
-    const colorObj = { r: currentClearColor.r, g: currentClearColor.g, b: currentClearColor.b };
+    const colorObj = {
+      r: currentClearColor.r,
+      g: currentClearColor.g,
+      b: currentClearColor.b,
+    };
     gsap.to(colorObj, {
       r: targetClearColor.r,
       g: targetClearColor.g,
       b: targetClearColor.b,
       duration,
       onUpdate: () => {
-        this.renderer.setClearColor(new THREE.Color(colorObj.r, colorObj.g, colorObj.b));
-      }
+        this.renderer.setClearColor(
+          new THREE.Color(colorObj.r, colorObj.g, colorObj.b)
+        );
+      },
     });
 
     if (this.skyDome && this.skyDome.material instanceof THREE.ShaderMaterial) {
-      const topColor = this.skyDome.material.uniforms.topColor.value as THREE.Color;
-      const bottomColor = this.skyDome.material.uniforms.bottomColor.value as THREE.Color;
-      gsap.to(topColor, { r: targetSkyTop.r, g: targetSkyTop.g, b: targetSkyTop.b, duration });
-      gsap.to(bottomColor, { r: targetSkyBottom.r, g: targetSkyBottom.g, b: targetSkyBottom.b, duration });
+      const topColor = this.skyDome.material.uniforms.topColor
+        .value as THREE.Color;
+      const bottomColor = this.skyDome.material.uniforms.bottomColor
+        .value as THREE.Color;
+      gsap.to(topColor, {
+        r: targetSkyTop.r,
+        g: targetSkyTop.g,
+        b: targetSkyTop.b,
+        duration,
+      });
+      gsap.to(bottomColor, {
+        r: targetSkyBottom.r,
+        g: targetSkyBottom.g,
+        b: targetSkyBottom.b,
+        duration,
+      });
     }
 
     if (this.cloudMaterial) {
-      gsap.to(this.cloudMaterial.uniforms.cloudDensity, { value: targetCloudDensity, duration });
+      gsap.to(this.cloudMaterial.uniforms.cloudDensity, {
+        value: targetCloudDensity,
+        duration,
+      });
     }
 
     this.fells.tintFells(targetFellsTint, duration, gsap);
 
     if (this.starfieldMaterial) {
-      gsap.to(this.starfieldMaterial.uniforms.starDensity, { value: targetStarDensity, duration });
+      gsap.to(this.starfieldMaterial.uniforms.starDensity, {
+        value: targetStarDensity,
+        duration,
+      });
     }
 
     // Audio Transition (Crossfade handled linearly by AudioEngine internally over 2.0s)
     this.audioEngine.mapSceneAudioProfile(targetScene, this.audioSources);
 
+    this.cameraController.setChapterView(targetScene);
     // Camera transition
     const targetSpeed = targetScene === 'TwilightStillness' ? 0.85 : 1.0;
     this.cameraController.transitionSpeedMultiplier(targetSpeed, duration);
@@ -304,7 +418,7 @@ export class CoreEngine {
   private setupVolumetricClouds() {
     this.cloudMaterial = new VolumetricCloudMaterial({
       color: new THREE.Color(0xffffff),
-      density: 0.15
+      density: 0.15,
     });
 
     // Create cloud planes
@@ -318,7 +432,7 @@ export class CoreEngine {
   }
 
   private setupMistParticles() {
-    const particleCount = 2000;
+    const particleCount = 180;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const sizes = new Float32Array(particleCount);
@@ -336,7 +450,7 @@ export class CoreEngine {
     geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
 
     this.mistMaterial = new MistMaterial({
-      color: new THREE.Color(0xdad7cd) // soft misty color
+      color: new THREE.Color(0xdad7cd), // soft misty color
     });
 
     const particles = new THREE.Points(geometry, this.mistMaterial);
@@ -345,12 +459,12 @@ export class CoreEngine {
 
   private setupDawnLighting() {
     // Soft ambient light
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6); // Soft gray
+    const ambientLight = new THREE.AmbientLight(0xa6bdce, 1.15); // Soft gray
     this.scene.add(ambientLight);
 
     // Warm directional light representing the rising sun
-    const directionalLight = new THREE.DirectionalLight(0xffa07a, 1.5); // Light salmon/orange
-    directionalLight.position.set(10, 5, -10);
+    const directionalLight = new THREE.DirectionalLight(0xffd5a1, 2.2); // Light salmon/orange
+    directionalLight.position.set(-35, 35, 20);
     this.scene.add(directionalLight);
 
     // Hemisphere light for sky/ground color gradients
@@ -358,19 +472,19 @@ export class CoreEngine {
     this.scene.add(hemiLight);
 
     // Denser fog to blend horizon for Twilight Stillness
-    this.scene.fog = new THREE.FogExp2(0x9a8c98, 0.02);
+    this.scene.fog = new THREE.FogExp2(0x9a8c98, 0.0015);
 
     // Add SkyDome for horizon gradient blending
     this.setupSkyDome();
   }
 
   private setupSkyDome() {
-    const skyGeo = new THREE.SphereGeometry(400, 32, 15);
+    const skyGeo = new THREE.SphereGeometry(800, 32, 15);
     const skyMat = new SkyDomeMaterial({
       topColor: new THREE.Color(0x87ceeb), // Sky blue
-      bottomColor: new THREE.Color(0xc9ada7), // Match horizon
+      bottomColor: new THREE.Color(0xeac0a4), // Match horizon
       offset: 10,
-      exponent: 0.6
+      exponent: 0.6,
     });
 
     this.skyDome = new THREE.Mesh(skyGeo, skyMat);
@@ -379,7 +493,10 @@ export class CoreEngine {
 
   private setupStarfield() {
     const starGeo = new THREE.SphereGeometry(450, 32, 32);
-    this.starfieldMaterial = new StarfieldMaterial({ starDensity: 0.05, starSize: 0.1 });
+    this.starfieldMaterial = new StarfieldMaterial({
+      starDensity: 0.05,
+      starSize: 0.1,
+    });
     this.starfield = new THREE.Mesh(starGeo, this.starfieldMaterial);
 
     // Reverse normals to render on the inside of the sphere
@@ -399,17 +516,19 @@ export class CoreEngine {
     this.cameraController.update();
 
     // Update water reflections and uniforms
-    this.waterManager.update();
+    this.waterManager.update(this.reducedMotion);
 
     // Update mist particles
     if (this.mistMaterial) {
-      this.mistMaterial.updateTime(delta);
+      this.mistMaterial.updateTime(this.reducedMotion ? 0 : delta);
     }
 
     // Update Volumetric Clouds
     if (this.cloudMaterial) {
-      this.cloudMaterial.updateTime(delta);
-      this.cloudMaterial.uniforms.cameraPosition.value.copy(this.cameraController.camera.position);
+      this.cloudMaterial.updateTime(this.reducedMotion ? 0 : delta);
+      this.cloudMaterial.uniforms.cameraPosition.value.copy(
+        this.cameraController.camera.position
+      );
     }
 
     // Update LODs
@@ -418,7 +537,7 @@ export class CoreEngine {
     // Update Rowboat bobbing
     if (this.rowboat) {
       // Gentle bobbing effect
-      const time = this.clock.getElapsedTime();
+      const time = this.reducedMotion ? 0 : this.clock.getElapsedTime();
       this.rowboat.position.y = 0.1 + Math.sin(time * 2) * 0.05;
       this.rowboat.rotation.z = Math.sin(time * 1.5) * 0.02;
       this.rowboat.rotation.x = Math.cos(time * 1.2) * 0.02;
@@ -426,25 +545,25 @@ export class CoreEngine {
 
     // Update Bird Flock
     if (this.birdFlock) {
-      const time = this.clock.getElapsedTime();
+      const time = this.reducedMotion ? 0 : this.clock.getElapsedTime();
       this.birdFlock.update(time);
     }
 
     // Update Sailboats
     if (this.sailboats) {
-      const time = this.clock.getElapsedTime();
+      const time = this.reducedMotion ? 0 : this.clock.getElapsedTime();
       this.sailboats.update(time);
     }
 
     // Update Fish Shadows
     if (this.fishShadows) {
-      const time = this.clock.getElapsedTime();
+      const time = this.reducedMotion ? 0 : this.clock.getElapsedTime();
       this.fishShadows.update(time);
     }
 
     // Update Fireflies
     if (this.fireflies) {
-      const time = this.clock.getElapsedTime();
+      const time = this.reducedMotion ? 0 : this.clock.getElapsedTime();
       this.fireflies.update(time);
     }
 
@@ -460,4 +579,4 @@ export class CoreEngine {
       this.fpsOverlay.update();
     }
   };
-  }
+}

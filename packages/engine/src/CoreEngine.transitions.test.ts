@@ -23,19 +23,52 @@ vi.mock('./FPSOverlay', () => ({
     hide() {}
     update() {}
     destroy() {}
-  }
+  },
 }));
 
 // Mock AudioContext because jsdom doesn't have it
+class MockNode {
+  gain = { value: 1, linearRampToValueAtTime: vi.fn() };
+  frequency = {
+    value: 0,
+    setValueAtTime: vi.fn(),
+    exponentialRampToValueAtTime: vi.fn(),
+  };
+  Q = { value: 0 };
+  buffer = null;
+  loop = false;
+  type = '';
+  connect = vi.fn().mockImplementation((node) => node);
+  start = vi.fn();
+  stop = vi.fn();
+}
 class MockAudioContext {
-  createGain() { return { connect: vi.fn(), gain: { value: 1, linearRampToValueAtTime: vi.fn() } }; }
-  createPanner() { return { connect: vi.fn() }; }
-  createBufferSource() { return { connect: vi.fn() }; }
+  sampleRate = 48000;
+  createGain() {
+    return new MockNode();
+  }
+  createPanner() {
+    return new MockNode();
+  }
+  createBiquadFilter() {
+    return new MockNode();
+  }
+  createBufferSource() {
+    return new MockNode();
+  }
+  createOscillator() {
+    return new MockNode();
+  }
+  createBuffer(_channels: number, length: number) {
+    return { getChannelData: () => new Float32Array(length) };
+  }
   destination = {};
   currentTime = 0;
-  state = 'running';
+  state = 'suspended';
   resume = vi.fn();
+  close = vi.fn();
 }
+vi.useFakeTimers();
 
 vi.stubGlobal('AudioContext', MockAudioContext);
 vi.stubGlobal('webkitAudioContext', MockAudioContext);
@@ -72,8 +105,16 @@ describe('CoreEngine Scene Transitions', () => {
 
   it('transitions to MiddayExpanse correctly', () => {
     const canvas = document.createElement('canvas');
-    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 800 });
-    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 600 });
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      writable: true,
+      configurable: true,
+      value: 600,
+    });
 
     const engine = new CoreEngine(canvas);
 
@@ -86,9 +127,15 @@ describe('CoreEngine Scene Transitions', () => {
     expect(gsap.to).toHaveBeenCalled();
 
     // Check fog color transition
-    const fogColorCall = vi.mocked(gsap.to).mock.calls.find(call =>
-      call[1].r !== undefined && call[1].g !== undefined && call[1].b !== undefined && call[1].duration === 3.0
-    );
+    const fogColorCall = vi
+      .mocked(gsap.to)
+      .mock.calls.find(
+        (call) =>
+          call[1].r !== undefined &&
+          call[1].g !== undefined &&
+          call[1].b !== undefined &&
+          call[1].duration === 3.0
+      );
     expect(fogColorCall).toBeDefined();
     // MiddayExpanse target fog color should be close to 0x87ceeb
     const expectedColor = new THREE.Color(0x87ceeb);
@@ -97,17 +144,27 @@ describe('CoreEngine Scene Transitions', () => {
     expect(fogColorCall![1].b).toBeCloseTo(expectedColor.b);
 
     // Check fog density transition
-    const fogDensityCall = vi.mocked(gsap.to).mock.calls.find(call =>
-      call[1].density !== undefined && call[1].duration === 3.0
-    );
+    const fogDensityCall = vi
+      .mocked(gsap.to)
+      .mock.calls.find(
+        (call) => call[1].density !== undefined && call[1].duration === 3.0
+      );
     expect(fogDensityCall).toBeDefined();
-    expect(fogDensityCall![1].density).toBe(0.005); // Target density for MiddayExpanse
+    expect(fogDensityCall![1].density).toBe(0.0012); // Target density for MiddayExpanse
   });
 
   it('transitions to TwilightStillness correctly', () => {
     const canvas = document.createElement('canvas');
-    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 800 });
-    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 600 });
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      writable: true,
+      configurable: true,
+      value: 600,
+    });
 
     const engine = new CoreEngine(canvas);
     vi.mocked(gsap.to).mockClear();
@@ -117,9 +174,15 @@ describe('CoreEngine Scene Transitions', () => {
     expect(gsap.to).toHaveBeenCalled();
 
     // Check fog color transition
-    const fogColorCall = vi.mocked(gsap.to).mock.calls.find(call =>
-      call[1].r !== undefined && call[1].g !== undefined && call[1].b !== undefined && call[1].duration === 4.0
-    );
+    const fogColorCall = vi
+      .mocked(gsap.to)
+      .mock.calls.find(
+        (call) =>
+          call[1].r !== undefined &&
+          call[1].g !== undefined &&
+          call[1].b !== undefined &&
+          call[1].duration === 4.0
+      );
     expect(fogColorCall).toBeDefined();
     // TwilightStillness target fog color should be close to 0x1a1a2e
     const expectedColor = new THREE.Color(0x1a1a2e);
@@ -128,17 +191,27 @@ describe('CoreEngine Scene Transitions', () => {
     expect(fogColorCall![1].b).toBeCloseTo(expectedColor.b);
 
     // Check fog density transition
-    const fogDensityCall = vi.mocked(gsap.to).mock.calls.find(call =>
-      call[1].density !== undefined && call[1].duration === 4.0
-    );
+    const fogDensityCall = vi
+      .mocked(gsap.to)
+      .mock.calls.find(
+        (call) => call[1].density !== undefined && call[1].duration === 4.0
+      );
     expect(fogDensityCall).toBeDefined();
-    expect(fogDensityCall![1].density).toBe(0.03); // Target density for TwilightStillness
+    expect(fogDensityCall![1].density).toBe(0.0036); // Target density for TwilightStillness
   });
 
   it('transitions to DawnSurface correctly', () => {
     const canvas = document.createElement('canvas');
-    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 800 });
-    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 600 });
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      writable: true,
+      configurable: true,
+      value: 600,
+    });
 
     const engine = new CoreEngine(canvas);
     vi.mocked(gsap.to).mockClear();
@@ -148,9 +221,15 @@ describe('CoreEngine Scene Transitions', () => {
     expect(gsap.to).toHaveBeenCalled();
 
     // Check fog color transition
-    const fogColorCall = vi.mocked(gsap.to).mock.calls.find(call =>
-      call[1].r !== undefined && call[1].g !== undefined && call[1].b !== undefined && call[1].duration === 2.0
-    );
+    const fogColorCall = vi
+      .mocked(gsap.to)
+      .mock.calls.find(
+        (call) =>
+          call[1].r !== undefined &&
+          call[1].g !== undefined &&
+          call[1].b !== undefined &&
+          call[1].duration === 2.0
+      );
     expect(fogColorCall).toBeDefined();
     // DawnSurface target fog color should be close to 0x9a8c98
     const expectedColor = new THREE.Color(0x9a8c98);
@@ -159,10 +238,12 @@ describe('CoreEngine Scene Transitions', () => {
     expect(fogColorCall![1].b).toBeCloseTo(expectedColor.b);
 
     // Check fog density transition
-    const fogDensityCall = vi.mocked(gsap.to).mock.calls.find(call =>
-      call[1].density !== undefined && call[1].duration === 2.0
-    );
+    const fogDensityCall = vi
+      .mocked(gsap.to)
+      .mock.calls.find(
+        (call) => call[1].density !== undefined && call[1].duration === 2.0
+      );
     expect(fogDensityCall).toBeDefined();
-    expect(fogDensityCall![1].density).toBe(0.02); // Target density for DawnSurface
+    expect(fogDensityCall![1].density).toBe(0.0015); // Target density for DawnSurface
   });
 });

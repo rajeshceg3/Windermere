@@ -28,7 +28,7 @@ describe('CameraController', () => {
     expect(controller.camera).toBeDefined();
     expect(controller.camera).toBeInstanceOf(THREE.PerspectiveCamera);
     expect(controller.camera.position.x).toBe(0);
-    expect(controller.camera.position.y).toBe(2);
+    expect(controller.camera.position.y).toBe(3.4);
     expect(controller.camera.position.z).toBe(5);
   });
 
