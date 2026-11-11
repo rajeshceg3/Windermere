@@ -11,8 +11,9 @@
   "chrome_gate": {
     "390_no-preference": "PASS",
     "390_reduce": "PASS",
-    "1365_reduce": "BLOCKED same greeting/boot race as 1365_no-preference (both 1365 combos); 390 combos PASS",
-    "1365_no-preference": "BLOCKED environment race (both 1365 combos): greeting assertion vs ~5.3s software-WebGL boot vs ~5.6s greet window; fresh-browser probe shows greeting visible; not an app defect (see SKILL.md Known boundaries)"
+    "1365_no-preference": "PASS",
+    "1365_reduce": "PASS",
+    "note": "all four combos green after verification-only gate fixes (PR pending): fresh browser per pass, coordinate pin click with interval-polled confirmation, greeting-or-hint post-boot invariant"
   },
   "production": "https://windermere.vercel.app HTTP 200, assets index-D6R8KU1g.js / index-Cr-Jg-p2.css captured before docs-only merge",
   "app_source_changes": "none"
