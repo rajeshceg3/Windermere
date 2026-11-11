@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-11",
+  "build": "pnpm install --frozen-lockfile && pnpm build: green (vite, apps/web/dist)",
+  "serve": "tests/visual/serve-csp.py on 127.0.0.1:8791 with the vercel.json CSP",
+  "lake_gate": {
+    "390_reduce": "PASS 3/3 moments",
+    "390_no-preference": "PASS 3/3",
+    "1365_reduce": "PASS 3/3",
+    "1365_no-preference": "PASS 3/3"
+  },
+  "chrome_gate": {
+    "390_no-preference": "PASS",
+    "390_reduce": "PASS",
+    "1365_reduce": "BLOCKED same greeting/boot race as 1365_no-preference (both 1365 combos); 390 combos PASS",
+    "1365_no-preference": "BLOCKED environment race (both 1365 combos): greeting assertion vs ~5.3s software-WebGL boot vs ~5.6s greet window; fresh-browser probe shows greeting visible; not an app defect (see SKILL.md Known boundaries)"
+  },
+  "production": "https://windermere.vercel.app HTTP 200, assets index-D6R8KU1g.js / index-Cr-Jg-p2.css captured before docs-only merge",
+  "app_source_changes": "none"
+}
