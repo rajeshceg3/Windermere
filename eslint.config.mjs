@@ -10,13 +10,14 @@ export default tseslint.config(
     ignores: ['node_modules/', 'dist/', 'apps/web/public/basis/'],
   },
   {
-    files: ['scripts/**/*.mjs'],
+    files: ['scripts/**/*.mjs', 'tools/**/*.mjs'],
     languageOptions: {
       globals: {
         console: 'readonly',
         process: 'readonly',
         fetch: 'readonly',
         URL: 'readonly',
+        Buffer: 'readonly',
       },
     },
   }
