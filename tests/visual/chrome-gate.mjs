@@ -107,7 +107,7 @@ try {
       // Slow software-WebGL boot can outlast the greeting window; the designed
       // fallback is hint discovery. Either is a correct post-boot state.
       const greeted = await visible(q, '.time-dock');
-      const hinted = await visible(q, '.chrome-hint');
+      const hinted = (await q.$('.chrome-hint')) ? await visible(q, '.chrome-hint') : false;
       assert.ok(greeted || hinted, 'greeting or hint shows after boot');
       await q.screenshot({ path: `${out}/${w}-${motion}-greeting.png` });
       await wait(6200);
