@@ -564,7 +564,7 @@ export class CoreEngine {
 
     // Update Starfield
     if (this.starfieldMaterial) {
-      this.starfieldMaterial.updateTime(delta);
+      this.starfieldMaterial.updateTime(this.reducedMotion ? 0 : delta);
     }
 
     this.renderer.render(this.scene, this.cameraController.camera);
