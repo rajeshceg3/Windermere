@@ -71,7 +71,7 @@ dc /= 2 * total;
 /* Spectral centroid (mono mix, simple DFT over windows via FFT-lite: use zero-cross + band energies with Goertzel). */
 function bandEnergy(samples, f, sr) {
   const w = 2 * Math.PI * f / sr, cw = 2 * Math.cos(w);
-  let s0 = 0, s1 = 0, s2 = 0;
+  let s0, s1 = 0, s2 = 0;
   const N = Math.min(samples.length, sr * 4);
   for (let i = 0; i < N; i++) { s0 = samples[i] + cw * s1 - s2; s2 = s1; s1 = s0; }
   return (s1 * s1 + s2 * s2 - cw * s1 * s2) / N;
