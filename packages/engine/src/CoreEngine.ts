@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+// @ts-expect-error plain-JS module, no type declarations
+import { renderLakeBuffers } from './lakeSoundscape.js';
 import { CameraController } from './camera/CameraController';
 import { WaterManager } from './scene/WaterManager';
 import { gsap } from 'gsap';
@@ -142,7 +144,7 @@ export class CoreEngine {
     this.scene.add(this.fireflies);
 
     this.audioEngine = new AudioEngine();
-    this.setupAudio();
+    /* Audio stays opt-in: no AudioContext is created until the first unmute. */
 
     // Register objects for Frustum Culling
     this.frustumCullingManager.registerObject(this.scene);
@@ -217,58 +219,51 @@ export class CoreEngine {
         source.connect(this.audioEngine.getMasterGain()!);
       });
 
-      const noise = context.createBuffer(
-        1,
-        context.sampleRate * 4,
-        context.sampleRate
-      );
-      const data = noise.getChannelData(0);
-      let last = 0;
-      for (let i = 0; i < data.length; i++) {
-        last = (last + (Math.random() * 2 - 1) * 0.02) / 1.02;
-        data[i] = last * 3.5;
-      }
+      /* Place-true synthesized buffers: fell wind, shore lap, dawn hush,
+         dawn chorus, evening crickets and owls. No samples, no voice. */
+      const lake = renderLakeBuffers(context.sampleRate) as Record<
+        string,
+        { L: Float32Array; R: Float32Array }
+      >;
       for (const key of [
         'ambient_wind',
         'water_ripples',
         'ambient_mist',
         'crickets',
+        'birds',
       ]) {
+        const data = lake[key];
+        const buffer = context.createBuffer(
+          2,
+          data.L.length,
+          context.sampleRate
+        );
+        buffer.getChannelData(0).set(data.L);
+        buffer.getChannelData(1).set(data.R);
         const source = context.createBufferSource();
-        source.buffer = noise;
+        source.buffer = buffer;
         source.loop = true;
-        const filter = context.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value =
-          key === 'water_ripples' ? 750 : key === 'crickets' ? 2800 : 240;
-        filter.Q.value = 0.6;
         const level = context.createGain();
-        level.gain.value = key === 'crickets' ? 0.015 : 0.055;
-        source.connect(filter).connect(level).connect(this.audioSources[key]);
+        level.gain.value = 0.9;
+        source.connect(level).connect(this.audioSources[key]);
         source.start();
       }
-      // Quiet, sparse synthetic bird calls. No autoplay: context resumes on sound-button tap.
-      const chirp = () => {
-        if (context.state === 'running') {
-          const o = context.createOscillator(),
-            g = context.createGain(),
-            t = context.currentTime;
-          o.frequency.setValueAtTime(2400, t);
-          o.frequency.exponentialRampToValueAtTime(1300, t + 0.14);
-          g.gain.setValueAtTime(0.024, t);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
-          o.connect(g).connect(this.audioSources['birds']);
-          o.start();
-          o.stop(t + 0.25);
-        }
-      };
-      this.birdTimer = window.setInterval(chirp, 5400);
       // Initialize with Dawn audio profile
       this.audioEngine.mapSceneAudioProfile('DawnSurface', this.audioSources);
     }
   }
 
+  private audioSetupStarted = false;
+
   public toggleAudioMute(mute: boolean) {
+    if (!mute && !this.audioSetupStarted) {
+      this.audioSetupStarted = true;
+      void this.setupAudio().then(async () => {
+        await this.audioEngine.resume();
+        this.audioEngine.setMute(false);
+      });
+      return;
+    }
     if (this.audioEngine) {
       if (!mute) void this.audioEngine.resume();
       this.audioEngine.setMute(mute);
