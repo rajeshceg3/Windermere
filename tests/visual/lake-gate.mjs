@@ -1,8 +1,8 @@
-/* global process,console,document,getComputedStyle,innerWidth,setTimeout */
+/* global process,console,document,getComputedStyle,innerWidth,setTimeout,localStorage */
 import puppeteer from 'puppeteer-core'; import assert from 'node:assert/strict'; import fs from 'node:fs';
 (async()=>{const b=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader','--hide-scrollbars']});const results=[];const out=process.env.OUT||'verification/lake-depth/local';fs.mkdirSync(out,{recursive:true});
 try{for(const w of JSON.parse(process.env.WIDTHS||'[390]'))for(const motion of JSON.parse(process.env.MOTIONS||'["reduce","no-preference"]')){
-const p=await b.newPage();const errors=[];p.on('pageerror',e=>errors.push(String(e)));p.on('console',m=>{if(m.type()==='error')errors.push(m.text())});await p.setViewport({width:w,height:844});await p.emulateMediaFeatures([{name:'prefers-reduced-motion',value:motion}]);await p.goto(process.env.BASE_URL||'http://127.0.0.1:8791/');await p.waitForSelector('.veil',{hidden:true,timeout:15000});
+const p=await b.newPage();const errors=[];p.on('pageerror',e=>errors.push(String(e)));p.on('console',m=>{if(m.type()==='error')errors.push(m.text())});await p.setViewport({width:w,height:844});await p.emulateMediaFeatures([{name:'prefers-reduced-motion',value:motion}]);await p.evaluateOnNewDocument(()=>{try{localStorage.setItem('windermere-chrome-pin','1')}catch{/* ignore */}});await p.goto(process.env.BASE_URL||'http://127.0.0.1:8791/');await p.waitForSelector('.veil',{hidden:true,timeout:15000});
 for(let ch=0;ch<3;ch++){
 await p.evaluate(ch=>document.querySelectorAll('.time-dock button')[ch].click(),ch);await new Promise(r=>setTimeout(r,7000));
 const target=[{yaw:0,pitch:-.08},{yaw:.08,pitch:-.11},{yaw:-.03,pitch:-.07}][ch];
