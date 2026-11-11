@@ -139,9 +139,8 @@ export const App = () => {
   const focusWithin = useRef(false);
 
   const [isMuted, setIsMuted] = useState(true);
-  const [isReducedMotion, setIsReducedMotion] = useState(
-    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
+  // Reduced motion is the default; full motion is opt-in via the toggle.
+  const [isReducedMotion, setIsReducedMotion] = useState(true);
   const [isHighContrast, setIsHighContrast] = useState(false);
   const [isLowPerformance, setIsLowPerformance] = useState(false);
   const [activeScene, setActiveScene] = useState<SceneState>('DawnSurface');
