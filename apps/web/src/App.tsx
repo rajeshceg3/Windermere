@@ -7,47 +7,105 @@ const scenes: Array<{ id: SceneState; label: string }> = [
   { id: 'TwilightStillness', label: 'Twilight' },
 ];
 
-const CHROME_IDLE_MS = 4200;
+const PIN_KEY = 'windermere-chrome-pin';
+const TOP_ZONE = 96;
+const BOTTOM_ZONE = 150;
+const RETIRE_MS = 2600;
 
-const SoundIcon = ({ muted }: { muted: boolean }) => (
+/* Hand-drawn ink: short confident strokes, round caps, never emoji. */
+const Ink = ({ children }: { children: React.ReactNode }) => (
   <svg
-    viewBox="0 0 24 24"
-    width="18"
-    height="18"
+    className="ink-icon"
+    viewBox="0 0 32 32"
     aria-hidden="true"
     fill="none"
     stroke="currentColor"
-    strokeWidth="1.5"
+    strokeWidth="2.3"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M11 5 6.5 9H3v6h3.5L11 19V5z" fill="currentColor" stroke="none" />
-    {muted ? (
-      <path d="M15 9.5l5 5m0-5l-5 5" />
-    ) : (
-      <>
-        <path d="M15 9.2a4 4 0 0 1 0 5.6" />
-        <path d="M17.4 6.8a7.4 7.4 0 0 1 0 10.4" />
-      </>
-    )}
+    {children}
   </svg>
 );
 
-const CalmIcon = () => (
+const ResetIcon = () => (
+  <Ink>
+    <path d="M7.4 14.6 C8.6 8.4 15.4 5.2 21 8.2 C25.6 10.8 26.4 17.4 22.6 21.4 C19.2 25 13.4 25 10.2 21.8" />
+    <path d="M6.6 8.6 L7.2 15 L13.4 14" />
+  </Ink>
+);
+
+const SoundInk = ({ muted }: { muted: boolean }) => (
+  <Ink>
+    <path d="M5.4 12.4 L10.6 12.2 L16.6 7.2 L16.8 24.8 L10.4 19.8 L5.6 19.6 Z" />
+    {muted ? (
+      <path d="M21 12.4 L27.4 19.6 M27.4 12.2 L21 19.8" />
+    ) : (
+      <>
+        <path d="M21 12 C23.2 14.2 23.2 17.8 21 20" />
+        <path d="M24.4 8.6 C28 12.4 28 19.6 24.4 23.4" />
+      </>
+    )}
+  </Ink>
+);
+
+const CalmInk = () => (
+  <Ink>
+    <path d="M4.6 10 L27.4 9.6" />
+    <circle cx="11" cy="10" r="2.6" />
+    <path d="M4.4 22 L27.6 22.4" />
+    <circle cx="21" cy="22.2" r="2.6" />
+  </Ink>
+);
+
+const PegInk = ({ pinned }: { pinned: boolean }) => (
   <svg
-    viewBox="0 0 24 24"
-    width="18"
-    height="18"
+    className="ink-icon"
+    viewBox="0 0 32 32"
+    aria-hidden="true"
+    fill={pinned ? 'currentColor' : 'none'}
+    stroke="currentColor"
+    strokeWidth="2.3"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M9.6 4.4 L22.4 5 L20.6 12.6 L17.6 14.4 L17 22.6 L16 29 L15 22.6 L14.4 14.4 L11.4 12.6 Z" />
+  </svg>
+);
+
+/* Three stones, the smallest mark of the Lakeland path. */
+const CairnInk = () => (
+  <svg
+    className="ink-icon cairn"
+    viewBox="0 0 32 32"
     aria-hidden="true"
     fill="none"
     stroke="currentColor"
-    strokeWidth="1.5"
+    strokeWidth="2.3"
     strokeLinecap="round"
+    strokeLinejoin="round"
   >
-    <line x1="4" y1="8" x2="20" y2="8" />
-    <circle cx="9" cy="8" r="2.2" fill="currentColor" stroke="none" />
-    <line x1="4" y1="16" x2="20" y2="16" />
-    <circle cx="15" cy="16" r="2.2" fill="currentColor" stroke="none" />
+    <path d="M4.6 27.6 C3.6 22.4 7.4 19.6 16 19.8 C24.6 19.6 28.4 22.6 27.4 27.6 Z" />
+    <path d="M8.6 19.4 C8.2 15.2 11.4 12.8 16.2 13 C21 12.8 23.8 15.4 23.2 19.4" />
+    <path d="M11.8 12.8 C11.6 9.6 13.4 7.4 16 7.6 C18.8 7.4 20.4 9.6 20 12.8" />
+  </svg>
+);
+
+/* A fingerpost arm: pointed board, hand-cut edges. */
+const Arm = ({ dir }: { dir: 'left' | 'right' }) => (
+  <svg
+    className="arm"
+    viewBox="0 0 112 48"
+    aria-hidden="true"
+    preserveAspectRatio="none"
+  >
+    <path
+      d={
+        dir === 'left'
+          ? 'M17 4 L107 6.4 L108.6 42 L16.4 44.6 L3.4 24.4 Z'
+          : 'M5 6.4 L95.6 4 L108.6 24.2 L96 44.6 L4.4 42 Z'
+      }
+    />
   </svg>
 );
 
@@ -78,6 +136,7 @@ export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<CoreEngine | null>(null);
   const idleTimer = useRef<number | null>(null);
+  const focusWithin = useRef(false);
 
   const [isMuted, setIsMuted] = useState(true);
   const [isReducedMotion, setIsReducedMotion] = useState(
@@ -90,6 +149,13 @@ export const App = () => {
   const [veilGone, setVeilGone] = useState(false);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [pinned, setPinned] = useState(() => {
+    try {
+      return localStorage.getItem(PIN_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     if (canvasRef.current && !engineRef.current) {
@@ -125,34 +191,73 @@ export const App = () => {
     engineRef.current?.setLowPerformance(isLowPerformance);
   }, [isLowPerformance]);
 
-  const wake = useCallback(() => {
-    setChromeVisible(true);
-    if (idleTimer.current) {
-      window.clearTimeout(idleTimer.current);
-    }
+  const retireSoon = useCallback(() => {
+    if (idleTimer.current) window.clearTimeout(idleTimer.current);
     idleTimer.current = window.setTimeout(() => {
-      setChromeVisible(false);
-    }, CHROME_IDLE_MS);
+      if (!focusWithin.current) setChromeVisible(false);
+    }, RETIRE_MS);
   }, []);
 
+  const wake = useCallback(() => {
+    setChromeVisible(true);
+    retireSoon();
+  }, [retireSoon]);
+
   useEffect(() => {
-    wake();
-    const events: Array<keyof WindowEventMap> = [
-      'pointermove',
-      'pointerdown',
-      'touchstart',
-      'keydown',
-    ];
-    events.forEach((event) =>
-      window.addEventListener(event, wake, { passive: true })
-    );
-    return () => {
-      events.forEach((event) => window.removeEventListener(event, wake));
-      if (idleTimer.current) {
-        window.clearTimeout(idleTimer.current);
+    // The entry greeting lasts a little after the veil clears, then retires.
+    const greet = window.setTimeout(retireSoon, 3000);
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return;
+      if (e.clientY < TOP_ZONE || e.clientY > window.innerHeight - BOTTOM_ZONE)
+        wake();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        focusWithin.current = false;
+        if (idleTimer.current) window.clearTimeout(idleTimer.current);
+        setSheetOpen(false);
+        setChromeVisible(false);
+        (document.activeElement as HTMLElement | null)?.blur?.();
       }
     };
-  }, [wake]);
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.clearTimeout(greet);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('keydown', onKey);
+      if (idleTimer.current) window.clearTimeout(idleTimer.current);
+    };
+  }, [wake, retireSoon]);
+
+  const togglePin = () => {
+    setPinned((p) => {
+      const next = !p;
+      try {
+        if (next) localStorage.setItem(PIN_KEY, '1');
+        else localStorage.removeItem(PIN_KEY);
+      } catch {
+        /* storage unavailable */
+      }
+      if (next) setChromeVisible(true);
+      else retireSoon();
+      return next;
+    });
+  };
+
+  const holdFocus = {
+    onFocus: () => {
+      focusWithin.current = true;
+      if (idleTimer.current) window.clearTimeout(idleTimer.current);
+      setChromeVisible(true);
+    },
+    onBlur: (e: React.FocusEvent<HTMLElement>) => {
+      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+        focusWithin.current = false;
+        retireSoon();
+      }
+    },
+  };
 
   const selectScene = (scene: SceneState) => {
     setActiveScene(scene);
@@ -166,8 +271,8 @@ export const App = () => {
   };
   const dockSwipeX = useRef<number | null>(null);
 
-  const chromeClass =
-    chromeVisible || sheetOpen ? 'chrome is-visible' : 'chrome';
+  const chromeOn = chromeVisible || sheetOpen || pinned;
+  const chromeClass = chromeOn ? 'chrome is-visible' : 'chrome';
 
   return (
     <main className={`lake-shell ${isHighContrast ? 'is-high-contrast' : ''}`}>
@@ -186,18 +291,29 @@ export const App = () => {
         </div>
       )}
 
-      <header className={chromeClass}>
+      {!chromeOn && (
+        <button
+          type="button"
+          className="chrome-hint"
+          aria-label="Show controls"
+          onClick={wake}
+        >
+          <CairnInk />
+        </button>
+      )}
+
+      <header className={chromeClass} {...holdFocus}>
         <span className="wordmark">Windermere</span>
       </header>
 
-      <div className={`${chromeClass} corner`}>
+      <div className={`${chromeClass} corner`} {...holdFocus}>
         <button
           type="button"
           className="orb"
           aria-label="Reset lake view"
           onClick={() => engineRef.current?.resetView()}
         >
-          <span aria-hidden="true">↺</span>
+          <ResetIcon />
         </button>
         <button
           type="button"
@@ -206,7 +322,7 @@ export const App = () => {
           aria-pressed={!isMuted}
           onClick={() => setIsMuted((m) => !m)}
         >
-          <SoundIcon muted={isMuted} />
+          <SoundInk muted={isMuted} />
         </button>
         <button
           type="button"
@@ -215,20 +331,25 @@ export const App = () => {
           aria-expanded={sheetOpen}
           onClick={() => setSheetOpen((open) => !open)}
         >
-          <CalmIcon />
+          <CalmInk />
+        </button>
+        <button
+          type="button"
+          id="pin-controls"
+          className="orb"
+          aria-pressed={pinned}
+          aria-label={pinned ? 'Let controls retire' : 'Keep controls visible'}
+          title={pinned ? 'Let controls retire' : 'Keep controls visible'}
+          onClick={togglePin}
+        >
+          <PegInk pinned={pinned} />
         </button>
       </div>
-
-      <p
-        className={`hint ${chromeVisible ? 'is-visible' : ''}`}
-        aria-hidden="true"
-      >
-        drag to drift
-      </p>
 
       <nav
         className={`${chromeClass} time-dock`}
         aria-label="Time of day"
+        {...holdFocus}
         onPointerDown={(e) => {
           dockSwipeX.current = e.clientX;
         }}
@@ -259,7 +380,7 @@ export const App = () => {
           }
         }}
       >
-        {scenes.map((scene) => (
+        {scenes.map((scene, i) => (
           <button
             key={scene.id}
             type="button"
@@ -268,7 +389,7 @@ export const App = () => {
             aria-pressed={activeScene === scene.id}
             onClick={() => selectScene(scene.id)}
           >
-            <span className="dot" aria-hidden="true" />
+            <Arm dir={i % 2 === 0 ? 'left' : 'right'} />
             <span className="time-label">{scene.label}</span>
           </button>
         ))}
