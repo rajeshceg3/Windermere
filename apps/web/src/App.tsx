@@ -287,7 +287,14 @@ export const App = () => {
       <canvas
         ref={canvasRef}
         className="lake-canvas"
-        aria-label="A quiet, living lake. Drag slowly to drift across the water."
+        aria-label="Windermere. Drag to look around, or use left and right arrow keys."
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            engineRef.current?.turnView(e.key === 'ArrowLeft' ? -1 : 1);
+          }
+        }}
       />
 
       {!veilGone && (
@@ -410,6 +417,10 @@ export const App = () => {
         aria-hidden={!sheetOpen}
         inert={!sheetOpen}
       >
+        <div className="look-choices" aria-label="Look around the lake">
+          <button type="button" className="quiet-row" onClick={() => engineRef.current?.turnView(-1)}>Look left</button>
+          <button type="button" className="quiet-row" onClick={() => engineRef.current?.turnView(1)}>Look right</button>
+        </div>
         <QuietSwitch
           label="Sound"
           checked={!isMuted}

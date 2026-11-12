@@ -127,6 +127,12 @@ export class CameraController {
     }
   }
 
+  public turnView(direction: number) {
+    this.onPointerUp();
+    this.targetRotationY += Math.sign(direction) * Math.PI / 18;
+    this.update();
+  }
+
   public resetView() {
     this.onPointerUp();
     this.targetRotationY = this.entryYaw;

@@ -34,3 +34,22 @@ Sources reviewed for the shared policy:
 No source prescribes this gain. The governing policy is calm defaults, fully
 honoured OS reduction, purpose-specific essential animation, no new setting,
 and preserved pause/navigation alternatives. Fleet rollout follows per-repo review.
+
+## Follow-up checkpoint,12November11:50
+Calm is now unconditional baseline with no full-motion switch. A live matchMedia
+listener observes OS changes and interrupts active drag/position transitions.
+Pointer capture is acquired only from the canvas; secondary pointers are ignored,
+blur/cancel/lost-capture end input. Canvas arrow keys and quiet-sheet Look left/
+right buttons provide direct alternatives. Fullscreen/camera defaults unchanged.
+
+Actual browser calm-gate390/1365 passes initial OS reduce, live on/off,
+keyboard/tap, a drag starting on the actual settings-button bounds (no camera
+leak), OS change mid-drag, stop-on-release, and zero page errors. Final touch
+measurement repeats6.136deg/0release drift. Both resulting frame widths inspected.
+Unit21/type/build and changed-file lint pass. Running eslint over generated dist
+produced minified-code errors, not a source gate result; no such claim is made.
+
+Still draft: unpinned pin gate baseline issue, complete chapter/veil matrix,
+landscape/320, explicit lost-capture and multipointer browser cases, profile of
+hidden/idle rendering, preview/production remain open. Physical Safari/iPhone and
+comfort testing not performed. No merge/release from this checkpoint.
