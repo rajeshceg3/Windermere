@@ -65,6 +65,7 @@ describe('chrome guard (gestures never fight)', () => {
     const event = new PointerEvent('pointerdown', {
       clientX: 100,
       clientY: 100,
+      isPrimary: true,
       bubbles: true,
     });
     Object.defineProperty(event, 'target', { value: nav });
@@ -82,6 +83,7 @@ describe('chrome guard (gestures never fight)', () => {
     const event = new PointerEvent('pointerdown', {
       clientX: 100,
       clientY: 100,
+      isPrimary: true,
       bubbles: true,
     });
     Object.defineProperty(event, 'target', { value: canvas });
@@ -90,5 +92,33 @@ describe('chrome guard (gestures never fight)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((c as any).isInteracting).toBe(true);
     c.dispose();
+  });
+});
+
+describe('calm direct manipulation', () => {
+  function drag(frames: number, segments: number, reduced = false) {
+    const canvas = document.createElement('canvas');
+    document.body.appendChild(canvas);
+    const c = new CameraController(canvas);
+    c.setReducedMotion(reduced);
+    const send = (type: string, x: number) => canvas.dispatchEvent(new PointerEvent(type, {
+      clientX: x, clientY: 100, pointerId: 1, isPrimary: true, bubbles: true,
+    }));
+    send('pointerdown', 300);
+    for (let i = 1; i <= segments; i++) {
+      send('pointermove', 300 - 180 * i / segments);
+      for (let f = 0; f < frames; f++) c.update();
+    }
+    const before = c.camera.rotation.y;
+    send('pointerup', 120);
+    for (let i = 0; i < 240; i++) c.update();
+    expect(c.camera.rotation.y).toBe(before);
+    c.dispose(); canvas.remove();
+    return before;
+  }
+  it('same displacement at sparse/dense event and frame rates, no release drift', () => {
+    expect(drag(1, 3)).toBeCloseTo(0.126, 8);
+    expect(drag(4, 60)).toBeCloseTo(0.126, 8);
+    expect(drag(2, 18, true)).toBeCloseTo(0.126, 8);
   });
 });

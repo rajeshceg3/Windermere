@@ -1,0 +1,17 @@
+{
+  "label": "before",
+  "start": {
+    "yaw": 0,
+    "pitch": -0.07695
+  },
+  "end": {
+    "yaw": 0.51712,
+    "pitch": -0.07998
+  },
+  "settled": {
+    "yaw": 0.91884,
+    "pitch": -0.08
+  },
+  "rotationDeg": 29.628793501805134,
+  "releaseDriftDeg": 23.016860545995428
+}
