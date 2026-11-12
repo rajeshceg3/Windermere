@@ -139,8 +139,8 @@ export const App = () => {
   const focusWithin = useRef(false);
 
   const [isMuted, setIsMuted] = useState(true);
-  // Reduced motion is the default; full motion is opt-in via the toggle.
-  const [isReducedMotion, setIsReducedMotion] = useState(true);
+  // Calm is the baseline, not a preference the visitor has to discover.
+  const isReducedMotion = true;
   const [isHighContrast, setIsHighContrast] = useState(false);
   const [isLowPerformance, setIsLowPerformance] = useState(false);
   const [activeScene, setActiveScene] = useState<SceneState>('DawnSurface');
@@ -183,7 +183,16 @@ export const App = () => {
   }, [isMuted]);
 
   useEffect(() => {
-    engineRef.current?.setReducedMotion(isReducedMotion);
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => {
+      // OS changes interrupt input/transitions even when calm is already on.
+      engineRef.current?.setReducedMotion(isReducedMotion || media.matches);
+      document.documentElement.dataset.motion = 'calm';
+      document.documentElement.dataset.osReduce = String(media.matches);
+    };
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
   }, [isReducedMotion]);
 
   useEffect(() => {
@@ -405,11 +414,6 @@ export const App = () => {
           label="Sound"
           checked={!isMuted}
           onChange={(on) => setIsMuted(!on)}
-        />
-        <QuietSwitch
-          label="Reduced motion"
-          checked={isReducedMotion}
-          onChange={setIsReducedMotion}
         />
         <QuietSwitch
           label="High contrast"

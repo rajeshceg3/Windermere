@@ -55,6 +55,7 @@ export class CameraController {
     });
     window.addEventListener('resize', this.onWindowResize, { passive: true });
     window.addEventListener('blur', this.onPointerUp);
+    this.canvas.addEventListener('lostpointercapture', this.onPointerUp);
   }
 
   public dispose() {
@@ -64,6 +65,7 @@ export class CameraController {
     window.removeEventListener('pointercancel', this.onPointerUp);
     window.removeEventListener('resize', this.onWindowResize);
     window.removeEventListener('blur', this.onPointerUp);
+    this.canvas.removeEventListener('lostpointercapture', this.onPointerUp);
   }
 
   private onPointerDown = (event: PointerEvent) => {
@@ -72,15 +74,18 @@ export class CameraController {
     if (
       target &&
       typeof target.closest === 'function' &&
-      target.closest('header, nav, button, a, .calm-sheet, .corner, .veil')
+      target.closest('header, nav, button, a, p, h1, label, input, select, dialog, .calm-sheet, .corner, .veil')
     ) {
       return;
     }
+    if (this.activePointer !== null) return;
+    if (target !== this.canvas) return;
     if (event.isPrimary === false || (event.button !== undefined && event.button !== 0)) return;
     this.activePointer = event.pointerId;
     this.isInteracting = true;
     this.pointerX = event.clientX;
     this.pointerY = event.clientY;
+    if (this.canvas.setPointerCapture) this.canvas.setPointerCapture(event.pointerId);
   };
 
   private onPointerMove = (event: PointerEvent) => {
@@ -97,9 +102,12 @@ export class CameraController {
     this.update();
   };
 
-  private onPointerUp = () => {
+  private onPointerUp = (event?: Event) => {
+    if (event instanceof PointerEvent && event.pointerId !== this.activePointer) return;
+    const id = this.activePointer;
     this.isInteracting = false;
     this.activePointer = null;
+    if (id !== null && this.canvas.hasPointerCapture?.(id)) this.canvas.releasePointerCapture(id);
   };
 
   public setSpeedMultiplier(multiplier: number) {
@@ -112,6 +120,11 @@ export class CameraController {
 
   public setReducedMotion(reduced: boolean) {
     this.isReducedMotion = reduced;
+    this.onPointerUp();
+    if (reduced) {
+      gsap.killTweensOf(this.basePosition);
+      // Settle at the current position, without completing a camera sweep.
+    }
   }
 
   public resetView() {
