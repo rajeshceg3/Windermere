@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 
 export class StarfieldMaterial extends THREE.ShaderMaterial {
-  constructor(options: { starDensity?: number, starSize?: number } = {}) {
-    const starDensity = options.starDensity !== undefined ? options.starDensity : 0.05;
+  constructor(options: { starDensity?: number; starSize?: number } = {}) {
+    const starDensity =
+      options.starDensity !== undefined ? options.starDensity : 0.05;
     const starSize = options.starSize !== undefined ? options.starSize : 0.1;
 
     super({
@@ -43,14 +44,14 @@ export class StarfieldMaterial extends THREE.ShaderMaterial {
             // Sparkle effect
             float sparkle = sin(time * 2.0 + h * 10.0) * 0.5 + 0.5;
 
-            float brightness = smoothstep(size, 0.0, dist) * h * sparkle;
+            float brightness = smoothstep(size, 0.0, dist) * (0.45 + 0.55 * h) * sparkle;
             return brightness;
         }
 
         void main() {
           vec3 ray = normalize(vWorldPosition);
-          float brightness = star(ray, starDensity, starSize);
-          gl_FragColor = vec4(vec3(brightness), brightness);
+          float brightness = star(ray, starDensity, starSize) * smoothstep(0.0, 0.08, ray.y);
+          gl_FragColor = vec4(vec3(brightness), 1.0);
         }
       `,
       transparent: true,
