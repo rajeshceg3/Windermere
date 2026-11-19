@@ -46,14 +46,23 @@ void main() {
 
     // Analytic world-space ripples work even without a normal-map asset.
     vec2 wave=vec2(sin(vWorldPosition.x*1.5+vWorldPosition.z*.4+uTime*.8),cos(vWorldPosition.z*2.3-vWorldPosition.x*.3-uTime*.6));
-    vec3 blendedNormal=normalize(vec3(wave.x*.035,1.0,wave.y*.025));
-    vec2 distortedScreenCoord=screenCoord+wave*.003;
+    vec2 wave2=vec2(sin(vWorldPosition.x*4.7-vWorldPosition.z*1.3-uTime*1.7),cos(vWorldPosition.z*5.9+vWorldPosition.x*1.1+uTime*1.3));
+    vec3 blendedNormal=normalize(vec3(wave.x*.035+wave2.x*.012,1.0,wave.y*.025+wave2.y*.009));
+    // Near water (low reflection-texcoord y) needs larger breakup; far water keeps calm mirror
+    float rippleScale = mix(2.4, 0.7, smoothstep(0.0, 0.5, screenCoord.y));
+    vec2 distortedScreenCoord=screenCoord+(wave*.007+wave2*.004)*rippleScale;
 
     // Clamp coordinates to avoid sampling outside the texture
     distortedScreenCoord = clamp(distortedScreenCoord, 0.001, 0.999);
 
-    // 4. Sample reflection map
-    vec4 reflectionColor = texture2D(tReflectionMap, distortedScreenCoord);
+    // 4. Sample reflection map (5-tap vertical streak so silhouettes and hulls read as water, not glass)
+    float texel = 1.0/512.0;
+    float streak = texel * (1.5 + rippleScale);
+    vec4 reflectionColor = texture2D(tReflectionMap, distortedScreenCoord) * 0.28;
+    reflectionColor += texture2D(tReflectionMap, clamp(distortedScreenCoord+vec2(0.0,streak),0.001,0.999)) * 0.18;
+    reflectionColor += texture2D(tReflectionMap, clamp(distortedScreenCoord-vec2(0.0,streak),0.001,0.999)) * 0.18;
+    reflectionColor += texture2D(tReflectionMap, clamp(distortedScreenCoord+vec2(0.0,streak*2.2),0.001,0.999)) * 0.18;
+    reflectionColor += texture2D(tReflectionMap, clamp(distortedScreenCoord-vec2(0.0,streak*2.2),0.001,0.999)) * 0.18;
 
     // 5. Fresnel effect (amount of reflection based on view angle)
     vec3 viewDir = normalize(cameraPosition-vWorldPosition);
