@@ -155,4 +155,4 @@ export class SailboatInstancing extends THREE.Group {
 
     this.instancedMesh.instanceMatrix.needsUpdate = true;
   }
-        }
+}
