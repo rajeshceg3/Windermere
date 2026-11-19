@@ -14,6 +14,8 @@ export class WaterManager {
 
   private reflectionRenderTarget: THREE.WebGLRenderTarget;
   private mirrorCamera: THREE.PerspectiveCamera;
+  /** Objects hidden while the reflection pass renders (e.g. the starfield: the lake mirrors the sky glow, not individual stars). */
+  public reflectionExcludes: THREE.Object3D[] = [];
   private waterPlane: THREE.Mesh;
   private waterMaterial: WaterMaterial;
 
@@ -82,6 +84,7 @@ export class WaterManager {
   private renderReflection() {
     // Hide the water plane itself during reflection rendering
     this.waterPlane.visible = false;
+    for (const obj of this.reflectionExcludes) obj.visible = false;
 
     // Sync mirror camera with main camera
     this.mirrorCamera.copy(this.mainCamera);
@@ -135,6 +138,7 @@ export class WaterManager {
     // Restore original render target and show water plane again
     this.renderer.setRenderTarget(currentRenderTarget);
     this.waterPlane.visible = true;
+    for (const obj of this.reflectionExcludes) obj.visible = true;
   }
 
   public getWaterMaterial(): WaterMaterial {
