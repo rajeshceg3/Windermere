@@ -290,6 +290,8 @@ export class CoreEngine {
     }
   }
 
+  public turnView(direction: number) { this.cameraController.turnView(direction); }
+
   public resetView() {
     this.cameraController.resetView();
   }

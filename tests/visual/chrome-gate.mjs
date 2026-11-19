@@ -154,4 +154,5 @@ try {
   fs.writeFileSync(`${out}/proof.json`, JSON.stringify({ base, results }, null, 2));
   console.log('PASS', JSON.stringify(results));
 } finally {
+  // Each viewport browser is closed in the loop above. No shared browser remains.
 }

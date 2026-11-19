@@ -15,15 +15,12 @@ export class CameraController {
   private targetRotationX = -0.08;
   private targetRotationY = 0;
 
-  private velocityX = 0;
-  private velocityY = 0;
-
-  // Physics constants for the floating inertia model
-  private readonly DAMPING = 0.92;
-  private readonly SENSITIVITY = 0.002;
-  private readonly MAX_VELOCITY = 0.05;
+  // Displacement, not a per-frame force. Same path has the same rotation at
+  // 30/60/120Hz and motion stops on release. Prototype gain, not a safety limit.
+  private readonly SENSITIVITY = 0.0007;
   private speedMultiplier = 1.0;
   private isReducedMotion = false;
+  private activePointer: number | null = null;
 
   // Default starting position
   private basePosition = new THREE.Vector3(0, 3.4, 5);
@@ -57,6 +54,8 @@ export class CameraController {
       passive: true,
     });
     window.addEventListener('resize', this.onWindowResize, { passive: true });
+    window.addEventListener('blur', this.onPointerUp);
+    this.canvas.addEventListener('lostpointercapture', this.onPointerUp);
   }
 
   public dispose() {
@@ -65,6 +64,8 @@ export class CameraController {
     window.removeEventListener('pointerup', this.onPointerUp);
     window.removeEventListener('pointercancel', this.onPointerUp);
     window.removeEventListener('resize', this.onWindowResize);
+    window.removeEventListener('blur', this.onPointerUp);
+    this.canvas.removeEventListener('lostpointercapture', this.onPointerUp);
   }
 
   private onPointerDown = (event: PointerEvent) => {
@@ -73,48 +74,40 @@ export class CameraController {
     if (
       target &&
       typeof target.closest === 'function' &&
-      target.closest('header, nav, button, a, .calm-sheet, .corner, .veil')
+      target.closest('header, nav, button, a, p, h1, label, input, select, dialog, .calm-sheet, .corner, .veil')
     ) {
       return;
     }
+    if (this.activePointer !== null) return;
+    if (target !== this.canvas) return;
+    if (event.isPrimary === false || (event.button !== undefined && event.button !== 0)) return;
+    this.activePointer = event.pointerId;
     this.isInteracting = true;
     this.pointerX = event.clientX;
     this.pointerY = event.clientY;
+    if (this.canvas.setPointerCapture) this.canvas.setPointerCapture(event.pointerId);
   };
 
   private onPointerMove = (event: PointerEvent) => {
-    if (!this.isInteracting) return;
-
+    if (!this.isInteracting || event.pointerId !== this.activePointer) return;
     const deltaX = event.clientX - this.pointerX;
     const deltaY = event.clientY - this.pointerY;
-
     this.pointerX = event.clientX;
     this.pointerY = event.clientY;
-
-    if (this.isReducedMotion) {
-      // Very reduced sensitivity for reduced motion mode
-      this.velocityX -= deltaX * (this.SENSITIVITY * 0.1);
-      this.velocityY -= deltaY * (this.SENSITIVITY * 0.1);
-    } else {
-      // Apply gentle forces, clamped to avoid hard acceleration curves
-      this.velocityX -= deltaX * (this.SENSITIVITY * this.speedMultiplier);
-      this.velocityY -= deltaY * (this.SENSITIVITY * this.speedMultiplier);
-    }
-
-    this.velocityX = THREE.MathUtils.clamp(
-      this.velocityX,
-      -this.MAX_VELOCITY,
-      this.MAX_VELOCITY
+    const gain = this.SENSITIVITY * Math.min(1, Math.max(0, this.speedMultiplier));
+    this.targetRotationY -= deltaX * gain;
+    this.targetRotationX = THREE.MathUtils.clamp(
+      this.targetRotationX - deltaY * gain, -Math.PI / 12, Math.PI / 18
     );
-    this.velocityY = THREE.MathUtils.clamp(
-      this.velocityY,
-      -this.MAX_VELOCITY,
-      this.MAX_VELOCITY
-    );
+    this.update();
   };
 
-  private onPointerUp = () => {
+  private onPointerUp = (event?: Event) => {
+    if (event instanceof PointerEvent && event.pointerId !== this.activePointer) return;
+    const id = this.activePointer;
     this.isInteracting = false;
+    this.activePointer = null;
+    if (id !== null && this.canvas.hasPointerCapture?.(id)) this.canvas.releasePointerCapture(id);
   };
 
   public setSpeedMultiplier(multiplier: number) {
@@ -127,10 +120,21 @@ export class CameraController {
 
   public setReducedMotion(reduced: boolean) {
     this.isReducedMotion = reduced;
+    this.onPointerUp();
+    if (reduced) {
+      gsap.killTweensOf(this.basePosition);
+      // Settle at the current position, without completing a camera sweep.
+    }
+  }
+
+  public turnView(direction: number) {
+    this.onPointerUp();
+    this.targetRotationY += Math.sign(direction) * Math.PI / 18;
+    this.update();
   }
 
   public resetView() {
-    this.velocityX = this.velocityY = 0;
+    this.onPointerUp();
     this.targetRotationY = this.entryYaw;
     this.targetRotationX = this.entryPitch;
     this.camera.rotation.set(this.entryPitch, this.entryYaw, 0);
@@ -147,7 +151,7 @@ export class CameraController {
     };
     const v = views[scene];
     if (!v) return;
-    this.velocityX = this.velocityY = 0;
+    this.onPointerUp();
     this.entryYaw = v.yaw;
     this.entryPitch = v.pitch;
     this.targetRotationX = v.pitch;
@@ -167,35 +171,7 @@ export class CameraController {
 
   public update() {
     this.camera.position.copy(this.basePosition);
-    // Apply floating inertia model
-    this.targetRotationY += this.velocityX;
-    this.targetRotationX += this.velocityY;
-
-    // Clamp vertical rotation to avoid flipping upside down
-    this.targetRotationX = THREE.MathUtils.clamp(
-      this.targetRotationX,
-      -Math.PI / 6, // Look up slightly
-      Math.PI / 12 // Look down slightly
-    );
-
-    // Smoothly interpolate current rotation towards target rotation
-    this.camera.rotation.y = THREE.MathUtils.lerp(
-      this.camera.rotation.y,
-      this.targetRotationY,
-      0.1
-    );
-    this.camera.rotation.x = THREE.MathUtils.lerp(
-      this.camera.rotation.x,
-      this.targetRotationX,
-      0.1
-    );
-
-    // Apply damping to gradually reduce velocity when not interacting
-    if (!this.isInteracting) {
-      const currentDamping = this.isReducedMotion ? 0.8 : this.DAMPING;
-      this.velocityX *= currentDamping;
-      this.velocityY *= currentDamping;
-    }
+    this.camera.rotation.set(this.targetRotationX, this.targetRotationY, 0, 'YXZ');
 
     this.canvas.dataset.yaw = this.camera.rotation.y.toFixed(5);
     this.canvas.dataset.pitch = this.camera.rotation.x.toFixed(5);
