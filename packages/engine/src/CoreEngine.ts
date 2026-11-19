@@ -41,6 +41,9 @@ export class CoreEngine {
   private audioEngine: AudioEngine;
   private starfieldMaterial!: StarfieldMaterial;
   private starfield!: THREE.Mesh;
+  private ambientLight!: THREE.AmbientLight;
+  private sunLight!: THREE.DirectionalLight;
+  private hemiLight!: THREE.HemisphereLight;
   private fireflies: FireflyParticleSystem;
   private fpsOverlay: FPSOverlay;
   private lodManager: LODManager;
@@ -132,6 +135,7 @@ export class CoreEngine {
 
     this.sailboats = new SailboatInstancing(12);
     this.scene.add(this.sailboats);
+    this.sailboats.setTintImmediate(new THREE.Color(0xd8cbb8)); // initial scene is Dawn
 
     this.setupVolumetricClouds();
 
@@ -139,6 +143,7 @@ export class CoreEngine {
     this.scene.add(this.fishShadows);
 
     this.setupStarfield();
+    this.updateReflectionExcludes('DawnSurface');
 
     this.fireflies = new FireflyParticleSystem(0);
     this.scene.add(this.fireflies);
@@ -289,6 +294,15 @@ export class CoreEngine {
     this.cameraController.resetView();
   }
 
+  private updateReflectionExcludes(scene: SceneState) {
+    // The starfield only speckles the lake when stars are dense (twilight);
+    // at dawn/midday keep the original reflection pass untouched.
+    if (this.waterManager) {
+      this.waterManager.reflectionExcludes =
+        scene === 'TwilightStillness' ? [this.starfield] : [];
+    }
+  }
+
   public transitionToScene(targetScene: SceneState, duration: number = 3.0) {
     if (this.reducedMotion) duration = 0;
     let targetFogColor: THREE.Color;
@@ -298,7 +312,16 @@ export class CoreEngine {
     let targetSkyBottom: THREE.Color;
     let targetCloudDensity: number;
     let targetStarDensity: number;
+    let targetStarSize: number;
     let targetFellsTint: THREE.Color;
+    let targetAmbientColor: THREE.Color;
+    let targetAmbientIntensity: number;
+    let targetSunColor: THREE.Color;
+    let targetSunIntensity: number;
+    let targetHemiSkyColor: THREE.Color;
+    let targetHemiGroundColor: THREE.Color;
+    let targetHemiIntensity: number;
+    let targetBoatTint: THREE.Color;
 
     switch (targetScene) {
       case 'DawnSurface':
@@ -309,7 +332,16 @@ export class CoreEngine {
         targetSkyBottom = new THREE.Color(0xeac0a4);
         targetCloudDensity = 0.1;
         targetStarDensity = 0.0;
+        targetStarSize = 0.03;
         targetFellsTint = new THREE.Color(0x416653);
+        targetAmbientColor = new THREE.Color(0xa6bdce);
+        targetAmbientIntensity = 1.15;
+        targetSunColor = new THREE.Color(0xffd5a1);
+        targetSunIntensity = 2.2;
+        targetHemiSkyColor = new THREE.Color(0xc9ada7);
+        targetHemiGroundColor = new THREE.Color(0x4a4e69);
+        targetHemiIntensity = 0.8;
+        targetBoatTint = new THREE.Color(0xd8cbb8); // dawn: soft warm, slightly dimmed
         break;
       case 'MiddayExpanse':
         targetFogColor = new THREE.Color(0x87ceeb);
@@ -319,17 +351,35 @@ export class CoreEngine {
         targetSkyBottom = new THREE.Color(0x87ceeb);
         targetCloudDensity = 0.15;
         targetStarDensity = 0.0;
+        targetStarSize = 0.03;
         targetFellsTint = new THREE.Color(0x5c7386);
+        targetAmbientColor = new THREE.Color(0xa6bdce);
+        targetAmbientIntensity = 1.15;
+        targetSunColor = new THREE.Color(0xffd5a1);
+        targetSunIntensity = 2.2;
+        targetHemiSkyColor = new THREE.Color(0xc9ada7);
+        targetHemiGroundColor = new THREE.Color(0x4a4e69);
+        targetHemiIntensity = 0.8;
+        targetBoatTint = new THREE.Color(0xf4f1de); // midday: bright off-white, unchanged
         break;
       case 'TwilightStillness':
-        targetFogColor = new THREE.Color(0x1a1a2e);
+        targetFogColor = new THREE.Color(0x1c1c34);
         targetFogDensity = 0.0036;
-        targetClearColor = new THREE.Color(0x1a1a2e);
-        targetSkyTop = new THREE.Color(0x0f0c29);
-        targetSkyBottom = new THREE.Color(0x302b63);
+        targetClearColor = new THREE.Color(0x1c1c34);
+        targetSkyTop = new THREE.Color(0x151232);
+        targetSkyBottom = new THREE.Color(0x53396b);
         targetCloudDensity = 0.05;
-        targetStarDensity = 0.05;
+        targetStarDensity = 90.0;
+        targetStarSize = 0.18;
         targetFellsTint = new THREE.Color(0x232344);
+        targetAmbientColor = new THREE.Color(0x46538c);
+        targetAmbientIntensity = 0.85;
+        targetSunColor = new THREE.Color(0xaabbee);
+        targetSunIntensity = 0.85;
+        targetHemiSkyColor = new THREE.Color(0x4a5484);
+        targetHemiGroundColor = new THREE.Color(0x1c2244);
+        targetHemiIntensity = 0.95;
+        targetBoatTint = new THREE.Color(0x565b78); // twilight: dim toward the water palette so boats read quiet
         break;
     }
 
@@ -393,10 +443,54 @@ export class CoreEngine {
     }
 
     this.fells.tintFells(targetFellsTint, duration, gsap);
+    this.sailboats?.tintBoats(targetBoatTint, duration, gsap);
+
+    this.updateReflectionExcludes(targetScene);
 
     if (this.starfieldMaterial) {
       gsap.to(this.starfieldMaterial.uniforms.starDensity, {
         value: targetStarDensity,
+        duration,
+      });
+      gsap.to(this.starfieldMaterial.uniforms.starSize, {
+        value: targetStarSize,
+        duration,
+      });
+    }
+
+    if (this.ambientLight) {
+      gsap.to(this.ambientLight, {
+        intensity: targetAmbientIntensity,
+        duration,
+      });
+      gsap.to(this.ambientLight.color, {
+        r: targetAmbientColor.r,
+        g: targetAmbientColor.g,
+        b: targetAmbientColor.b,
+        duration,
+      });
+    }
+    if (this.sunLight) {
+      gsap.to(this.sunLight, { intensity: targetSunIntensity, duration });
+      gsap.to(this.sunLight.color, {
+        r: targetSunColor.r,
+        g: targetSunColor.g,
+        b: targetSunColor.b,
+        duration,
+      });
+    }
+    if (this.hemiLight) {
+      gsap.to(this.hemiLight, { intensity: targetHemiIntensity, duration });
+      gsap.to(this.hemiLight.color, {
+        r: targetHemiSkyColor.r,
+        g: targetHemiSkyColor.g,
+        b: targetHemiSkyColor.b,
+        duration,
+      });
+      gsap.to(this.hemiLight.groundColor, {
+        r: targetHemiGroundColor.r,
+        g: targetHemiGroundColor.g,
+        b: targetHemiGroundColor.b,
         duration,
       });
     }
@@ -454,17 +548,17 @@ export class CoreEngine {
 
   private setupDawnLighting() {
     // Soft ambient light
-    const ambientLight = new THREE.AmbientLight(0xa6bdce, 1.15); // Soft gray
-    this.scene.add(ambientLight);
+    this.ambientLight = new THREE.AmbientLight(0xa6bdce, 1.15); // Soft gray
+    this.scene.add(this.ambientLight);
 
     // Warm directional light representing the rising sun
-    const directionalLight = new THREE.DirectionalLight(0xffd5a1, 2.2); // Light salmon/orange
-    directionalLight.position.set(-35, 35, 20);
-    this.scene.add(directionalLight);
+    this.sunLight = new THREE.DirectionalLight(0xffd5a1, 2.2); // Light salmon/orange
+    this.sunLight.position.set(-35, 35, 20);
+    this.scene.add(this.sunLight);
 
     // Hemisphere light for sky/ground color gradients
-    const hemiLight = new THREE.HemisphereLight(0xc9ada7, 0x4a4e69, 0.8);
-    this.scene.add(hemiLight);
+    this.hemiLight = new THREE.HemisphereLight(0xc9ada7, 0x4a4e69, 0.8);
+    this.scene.add(this.hemiLight);
 
     // Denser fog to blend horizon for Twilight Stillness
     this.scene.fog = new THREE.FogExp2(0x9a8c98, 0.0015);
@@ -489,8 +583,8 @@ export class CoreEngine {
   private setupStarfield() {
     const starGeo = new THREE.SphereGeometry(450, 32, 32);
     this.starfieldMaterial = new StarfieldMaterial({
-      starDensity: 0.05,
-      starSize: 0.1,
+      starDensity: 0.0,
+      starSize: 0.18,
     });
     this.starfield = new THREE.Mesh(starGeo, this.starfieldMaterial);
 
