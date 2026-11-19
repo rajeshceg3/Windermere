@@ -3,9 +3,15 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 
 export class SailboatInstancing extends THREE.Group {
   private instancedMesh: THREE.InstancedMesh;
+  private boatMaterial: THREE.MeshStandardMaterial;
   private instancesCount: number;
   private dummy: THREE.Object3D;
-  private instanceData: { speed: number; angle: number; radius: number; phase: number }[] = [];
+  private instanceData: {
+    speed: number;
+    angle: number;
+    radius: number;
+    phase: number;
+  }[] = [];
 
   constructor(instancesCount = 10) {
     super();
@@ -14,7 +20,16 @@ export class SailboatInstancing extends THREE.Group {
 
     // Create Sailboat Geometry
     // We'll create a simple hull and a sail and merge them to use with InstancedMesh
-    const hullGeometry = new THREE.CylinderGeometry(0.3, 0.2, 1.5, 8, 1, false, 0, Math.PI);
+    const hullGeometry = new THREE.CylinderGeometry(
+      0.3,
+      0.2,
+      1.5,
+      8,
+      1,
+      false,
+      0,
+      Math.PI
+    );
     hullGeometry.rotateZ(Math.PI / 2);
     hullGeometry.rotateX(Math.PI / 2);
 
@@ -23,11 +38,20 @@ export class SailboatInstancing extends THREE.Group {
 
     const sailGeometry = new THREE.BufferGeometry();
     const sailVertices = new Float32Array([
-      0, 0.2, -0.2, // Bottom back
-      0, 0.2, 0.6,  // Bottom front
-      0, 1.5, 0     // Top
+      0,
+      0.2,
+      -0.2, // Bottom back
+      0,
+      0.2,
+      0.6, // Bottom front
+      0,
+      1.5,
+      0, // Top
     ]);
-    sailGeometry.setAttribute('position', new THREE.BufferAttribute(sailVertices, 3));
+    sailGeometry.setAttribute(
+      'position',
+      new THREE.BufferAttribute(sailVertices, 3)
+    );
     sailGeometry.computeVertexNormals();
 
     // Convert to non-indexed so attributes match
@@ -35,20 +59,30 @@ export class SailboatInstancing extends THREE.Group {
 
     // Ensure both geometries have a 'uv' attribute (CylinderGeometry adds uv, sailGeometry doesn't have it by default)
     if (!sailGeometry.hasAttribute('uv')) {
-        const count = sailGeometry.attributes.position.count;
-        sailGeometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(count * 2), 2));
+      const count = sailGeometry.attributes.position.count;
+      sailGeometry.setAttribute(
+        'uv',
+        new THREE.BufferAttribute(new Float32Array(count * 2), 2)
+      );
     }
 
     // Create merged geometry
-    const mergedGeometry = BufferGeometryUtils.mergeGeometries([nonIndexedHull, sailGeometry], false);
+    const mergedGeometry = BufferGeometryUtils.mergeGeometries(
+      [nonIndexedHull, sailGeometry],
+      false
+    );
 
-    const material = new THREE.MeshStandardMaterial({
+    this.boatMaterial = new THREE.MeshStandardMaterial({
       color: 0xf4f1de, // off-white
       roughness: 0.8,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
     });
 
-    this.instancedMesh = new THREE.InstancedMesh(mergedGeometry, material, this.instancesCount);
+    this.instancedMesh = new THREE.InstancedMesh(
+      mergedGeometry,
+      this.boatMaterial,
+      this.instancesCount
+    );
     this.instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
     // Initialize instances with random positions and attributes
@@ -75,6 +109,24 @@ export class SailboatInstancing extends THREE.Group {
 
     this.instancedMesh.instanceMatrix.needsUpdate = true;
     this.add(this.instancedMesh);
+  }
+
+  /** Tween the shared hull/sail tint toward a scene palette color. */
+  public tintBoats(
+    color: THREE.Color,
+    duration: number,
+    gsap: typeof import('gsap').gsap
+  ): void {
+    gsap.to(this.boatMaterial.color, {
+      r: color.r,
+      g: color.g,
+      b: color.b,
+      duration,
+    });
+  }
+
+  public setTintImmediate(color: THREE.Color): void {
+    this.boatMaterial.color.set(color);
   }
 
   update(time: number) {
